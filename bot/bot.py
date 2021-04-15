@@ -9,7 +9,7 @@ from datetime import datetime
 # initialize bot
 intents = discord.Intents.default()
 intents.members = True
-bot = commands.Bot(command_prefix='-', description='portfolio-tracking bot', intents=intents)
+bot = commands.Bot(command_prefix='-', description='blindfold chess bot', intents=intents)
 @bot.event
 async def on_ready():
     print('logged on as {0}{1}!'.format(bot.user.name, bot.user.id))
