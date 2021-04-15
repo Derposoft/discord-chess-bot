@@ -17,7 +17,7 @@ async def on_ready():
 @bot.command()
 async def new(ctx, side: str):
     """starts a new chess game for the current user given an option of side: b, w, or r (random)"""
-    info = requests.get(config.API_URI + 'new/' + side.lstrip().rstrip()).text
+    info = requests.get(config.API_URI + 'new?uid=' + str(ctx.author.id) + '&side=' + side.lstrip().rstrip()).text
     await ctx.send(info)
 
 @bot.command()
@@ -36,12 +36,8 @@ async def ff(ctx):
 @bot.command()
 async def cheat(ctx, ticker: str, num_shares: int, init_price: int, date: str=str(datetime.now().isoformat())):
     """allow the user to cheat by providing a boardstate and an evaluation"""
-    confirmation = await stocks.sell(ctx, ticker, num_shares, init_price, date)
-    await ctx.send(
-        '{0} sold {1} shares of {2}.'.format(ctx.author.name, num_shares, ticker)
-        if confirmation else 
-        'There was a problem placing that order. Please check your shit, idiot.'
-    )
+    info = requests.get(config.API_URI + 'cheat?uid=' + str(ctx.author.id))
+    await ctx.send()
 
 keys = json.load(open('keys.json', 'r'))
 bot.run(keys.get('discord'))
