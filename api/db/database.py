@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session as DatabaseSession
-from storage.models import Base
 import config
 
 engine = create_engine(

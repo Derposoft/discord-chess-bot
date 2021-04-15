@@ -7,29 +7,28 @@ import utils
 
 app = Flask(__name__)
 
+# creates a new game for the player
 @app.route('/new')
 def new():
-    # create a new game for the player
-    print(request.query_string)
-    print(request.args)
     args = utils.parse_args(request)
-    return 'New game successfully started for %s' % args["name"]
+    game = Game(player_uid=args['uid'], moves='', stockfish_elo=args['elo'])
+    return 'New game successfully started for %s' % args['name']
 
+# make a move for the player
 @app.route('/move',methods = ['POST', 'GET'])
 def move():
-    # make a move for the player
     return 'under construction'
 
 
+# accept the player's resignation
 @app.route('/ff',methods = ['POST', 'GET'])
 def ff():
-    # accept the player's resignation
     return 'under construction'
 
 
+# allow the player to cheat
 @app.route('/cheat',methods = ['POST', 'GET'])
 def cheat():
-    # allow the player to cheat
     return 'under construction'
 
 if __name__ == '__main__':
