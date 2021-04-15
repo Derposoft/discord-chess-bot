@@ -1,8 +1,7 @@
 from flask import Flask, url_for, request
 from stockfish import Stockfish
 stockfish = Stockfish('/usr/games/stockfish')
-from db.Game import Game
-from db.database import db_session
+from db.database import db_session, Game
 import utils
 
 app = Flask(__name__)

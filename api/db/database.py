@@ -1,5 +1,7 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session as DatabaseSession
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, String, Integer
 import config
 
 engine = create_engine(
@@ -9,11 +11,22 @@ engine = create_engine(
 )
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+Base = declarative_base()
+Base.metadata.create_all()
+
 def db_session():
-    s: DatabaseSession = Session()
+    return Session()
+    '''s: DatabaseSession = Session()
     try:
         yield s
     except:
         s.rollback()
     finally:
-        s.close()
+        s.close()'''
+
+class Game(Base):
+    __tablename__ = 'games'
+
+    uid = Column(String, primary_key=True)
+    moves = Column(String)
+    stockfish_elo = Column(Integer)
