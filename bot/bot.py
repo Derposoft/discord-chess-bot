@@ -1,10 +1,10 @@
 import discord
 from discord.ext import commands
-from commands import stocks
 import json
 import requests
-import config
 from datetime import datetime
+import utils
+import config
 
 # initialize bot
 intents = discord.Intents.default()
