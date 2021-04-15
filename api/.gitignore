@@ -1,3 +1,4 @@
 *.db
 keys.json
+storage.db
 __pycache__/*

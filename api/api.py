@@ -1,5 +1,10 @@
 from flask import Flask, url_for, request
+from stockfish import Stockfish
+stockfish = Stockfish('/usr/games/stockfish')
+import db.Game as Game
+from db.database import db_session
 import utils
+
 app = Flask(__name__)
 
 @app.route('/new')
