@@ -15,31 +15,27 @@ async def on_ready():
     print('logged on as {0}{1}!'.format(bot.user.name, bot.user.id))
 
 @bot.command()
-async def quote(ctx, ticker: str):
-    """ticker: quote stock's price from ticker"""
-    info = requests.get(config.API_URI + 'quotes/' + ticker.lstrip().rstrip()).text
+async def new(ctx, side: str):
+    """starts a new chess game for the current user given an option of side: b, w, or r (random)"""
+    info = requests.get(config.API_URI + 'new/' + side.lstrip().rstrip()).text
     await ctx.send(info)
 
 @bot.command()
-async def list(ctx):
-    """: list your portfolio"""
+async def move(ctx, move):
+    """makes a move in the currently running game"""
     print(ctx.author.id)
-    info = requests.get(config.API_URI + 'trades?uid=' + str(ctx.author.id))
+    info = requests.get(config.API_URI + 'move?uid=' + str(ctx.author.id) + '&move=' + move)
     await ctx.send(info.text)
 
 @bot.command()
-async def buy(ctx, ticker: str, num_shares: int, init_price: int, date: str=str(datetime.now().isoformat())):
-    """ticker x y date: log a purchase of x shares of a ticker's stock at $y on the given date. price and date optional"""
-    confirmation = await stocks.buy(ctx, ticker, num_shares, init_price, date)
-    await ctx.send(
-        '{0} bought {1} shares of {2}.'.format(ctx.author.name, num_shares, ticker)
-        if confirmation else 
-        'There was a problem placing that order. Please check your shit, idiot.'
-    )
+async def ff(ctx):
+    """resign the currently running game"""
+    info = requests.get(config.API_URI + 'ff?uid=' + str(ctx.author.id))
+    await ctx.send(info)
 
 @bot.command()
-async def sell(ctx, ticker: str, num_shares: int, init_price: int, date: str=str(datetime.now().isoformat())):
-    """ticker x y date: log a selloff of x shares of a ticker's stock at $y on the given date. price and date optional"""
+async def cheat(ctx, ticker: str, num_shares: int, init_price: int, date: str=str(datetime.now().isoformat())):
+    """allow the user to cheat by providing a boardstate and an evaluation"""
     confirmation = await stocks.sell(ctx, ticker, num_shares, init_price, date)
     await ctx.send(
         '{0} sold {1} shares of {2}.'.format(ctx.author.name, num_shares, ticker)
