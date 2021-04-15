@@ -17,7 +17,7 @@ async def on_ready():
 @bot.command()
 async def new(ctx, side: str):
     """starts a new chess game for the current user given an option of side: b, w, or r (random)"""
-    info = requests.get(config.API_URI + 'new?side=' + side.lstrip().rstrip().text + '&' + utils.user_info(ctx))
+    info = requests.get(config.API_URI + 'new?side=' + side.lstrip().rstrip() + '&' + utils.user_info(ctx)).text
     await ctx.send(info)
 
 @bot.command()
