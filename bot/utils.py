@@ -1,3 +1,3 @@
-def send_user(ctx):
-    return 'uid=' + ctx.author.id + '&name=' + ctx.author.name
+def user_info(ctx):
+    return 'uid=' + str(ctx.author.id) + '&name=' + ctx.author.name
     

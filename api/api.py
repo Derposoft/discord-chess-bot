@@ -3,9 +3,11 @@ import utils
 app = Flask(__name__)
 
 @app.route('/new')
-def new(name):
+def new():
     # create a new game for the player
-    args = utils.parse(request)
+    print(request.query_string)
+    print(request.args)
+    args = utils.parse_args(request)
     return 'New game successfully started for %s' % args["name"]
 
 @app.route('/move',methods = ['POST', 'GET'])

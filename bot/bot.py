@@ -17,27 +17,26 @@ async def on_ready():
 @bot.command()
 async def new(ctx, side: str):
     """starts a new chess game for the current user given an option of side: b, w, or r (random)"""
-    info = requests.get(config.API_URI + 'new?side=' + side.lstrip().rstrip()).text + '&' + utils.send_user(ctx)
+    info = requests.get(config.API_URI + 'new?side=' + side.lstrip().rstrip().text + '&' + utils.user_info(ctx))
     await ctx.send(info)
 
 @bot.command()
 async def move(ctx, move):
     """makes a move in the currently running game"""
-    print(ctx.author.id)
-    info = requests.get(config.API_URI + 'move?move=' + move + '&' + utils.send_user(ctx))
+    info = requests.get(config.API_URI + 'move?move=' + move + '&' + utils.user_info(ctx))
     await ctx.send(info.text)
 
 @bot.command()
 async def ff(ctx):
     """resign the currently running game"""
-    info = requests.get(config.API_URI + 'ff?' + + utils.send_user(ctx))
+    info = requests.get(config.API_URI + 'ff?' + utils.user_info(ctx))
     await ctx.send(info)
 
 @bot.command()
-async def cheat(ctx, ticker: str, num_shares: int, init_price: int, date: str=str(datetime.now().isoformat())):
+async def cheat(ctx):
     """allow the user to cheat by providing a boardstate and an evaluation"""
-    info = requests.get(config.API_URI + 'cheat?' + + utils.send_user(ctx))
+    info = requests.get(config.API_URI + 'cheat?' + utils.user_info(ctx))
     await ctx.send()
 
-keys = json.load(open('bot/keys.json', 'r'))
+keys = json.load(open('keys.json', 'r'))
 bot.run(keys.get('discord'))
