@@ -15,7 +15,7 @@ async def on_ready():
     print('logged on as {0}{1}!'.format(bot.user.name, bot.user.id))
 
 @bot.command()
-async def new(ctx, side: str, elo: int = 1500):
+async def new(ctx, side: str, elo: str = '1500'):
     """starts a new chess game for the current user given an option of side: b, w, or r (random)"""
     info = requests.get(config.API_URI + 'new?side=' + side.lstrip().rstrip() 
         + '&elo=' + elo + '&' + utils.user_info(ctx))
