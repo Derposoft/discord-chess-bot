@@ -80,7 +80,7 @@ def cheat():
     # return cheats
     board, eval, best = cheat_board(curr_game.moves)
 
-    return board + '\n' + eval + '\n' + best + '\n' + mention(args)
+    return board + '\n' + eval + '\n' + best + '\n' + 'that good enough for you? stupid cheater' + mention(args)
 
 if __name__ == '__main__':
    app.run(debug = True)
