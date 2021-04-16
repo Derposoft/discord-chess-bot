@@ -15,18 +15,11 @@ Base = declarative_base()
 
 def db_session():
     return Session()
-    '''s: DatabaseSession = Session()
-    try:
-        yield s
-    except:
-        s.rollback()
-    finally:
-        s.close()'''
 
 class Game(Base):
     __tablename__ = 'games'
 
-    uid = Column(String, primary_key=True)
+    uid = Column(String, primary_key=True, unique=True)
     moves = Column(String)
     stockfish_elo = Column(Integer)
     player_side = Column(String)
