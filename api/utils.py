@@ -53,7 +53,7 @@ def get_gameover_text(moves, player_just_moved):
     elif board.can_claim_fifty_moves():
         return 'game is draw by 50 move rule OMEGALUL:\n' + finish_text
     elif board.can_claim_threefold_repetition():
-        return 'game is over by 3fold repetition :thinking: :\n' + finish_text
+        return 'game is over by 3fold repetition :LUL: :\n' + finish_text
     elif board.outcome() != None:
         if board.outcome().winner:
             if player_just_moved:
