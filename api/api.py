@@ -1,4 +1,4 @@
-from utils import check_in_game, mention, parse_args, engine_move, check_move, relay_move, claim_victory, cheat_board
+from utils import check_in_game, mention, parse_args, engine_move, check_move, relay_move, claim_victory, cheat_board, get_gameover_text
 from flask import Flask, url_for, request
 from db.database import db_session, Game
 
@@ -45,13 +45,27 @@ def move():
     # load the game in stockfish and verify that the move is legal
     if not check_move(curr_game.moves, args['move']):
         return 'u can\'t play that lol' + mention(args)
-    # if move is legal, add the move and stockfish's reply to the movelist
+    # if move is legal, add the move
     new_moves = curr_game.moves + ' ' + args['move']
+    # did player win?
+    gameover_text = get_gameover_text(new_moves, player_just_moved=True)
+    print("PLAYER MOVE GAMEOVER?: ", gameover_text)
+    if gameover_text != '':
+        # end game
+        db.delete(curr_game)
+        return gameover_text
+    # make engine move    
     best = engine_move(new_moves, curr_game.stockfish_elo)
     new_moves = new_moves + ' ' + best
-    print(new_moves)
     curr_game.moves = new_moves
     db.commit()
+    # did engine win?
+    gameover_text = get_gameover_text(new_moves, player_just_moved=False)
+    print("CPU MOVE GAMEOVER?: ", gameover_text)
+    if gameover_text != '':
+        # end game
+        db.delete(curr_game)
+        return relay_move(best, args) + '\n' + gameover_text
     return relay_move(best, args)
 
 # accept the player's resignation

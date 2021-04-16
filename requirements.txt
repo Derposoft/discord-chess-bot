@@ -1,4 +1,5 @@
 discord.py
 Flask
 stockfish
+chess
 sqlalchemy
