@@ -12,7 +12,6 @@ engine = create_engine(
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
-Base.metadata.create_all()
 
 def db_session():
     return Session()
@@ -30,3 +29,6 @@ class Game(Base):
     uid = Column(String, primary_key=True)
     moves = Column(String)
     stockfish_elo = Column(Integer)
+    player_side = Column(String)
+    
+Base.metadata.create_all(engine)
