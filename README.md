@@ -11,8 +11,9 @@ follow these steps:
 {
     "discord": "[secret token]"
 }
-3. run 'bot/bot.py'
-4. run 'api/api.py'
+4. install stockfish on your local machine. for debian-based linux machines, this looks something like running "sudo apt-get install stockfish".
+5. run 'bot/bot.py'
+6. run 'api/api.py'
 
 the bot is now ready to use pog
 
