@@ -5,6 +5,7 @@ import requests
 from datetime import datetime
 import utils
 import config
+import os
 
 # initialize bot
 intents = discord.Intents.default()
@@ -39,5 +40,5 @@ async def cheat(ctx):
     info = requests.get(config.API_URI + 'cheat?' + utils.user_info(ctx))
     await ctx.send(info.text)
 
-keys = json.load(open('keys.json', 'r'))
+keys = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'keys.json'), 'r'))
 bot.run(keys.get('discord'))
