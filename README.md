@@ -3,6 +3,7 @@ discord bot enabling chess enthusiasts who add this bot to their servers to play
 
 ## how do i start up this thing?
 follow these steps:
+0. install the requirements for this project (pip install -r requirements.txt)
 1. create a bot using the discord developer portal, because i don't have this hosted anywhere
 2. add your bot to your server (hint: you'll need your application ID for this)
 3. find your bot's secret token and put it in bot/keys.json, with the key being "discord" and the value being the secret token. i.e.:
@@ -11,15 +12,22 @@ follow these steps:
 }
 3. run 'bot/bot.py'
 4. run 'api/api.py'
+
 the bot is now ready to use pog
 
 ## ok but how do i use the bot once it's up and running?
 the commands are simple:
+
 **-help**   list the commands
+
 **-new [white|black] [elo]**  start a new game either as white or black with the given stockfish elo opponent. if no elo is given. elo=1500 will be used.
+
 **-move [move]**    make a move. moves must be in full algebraic notation (e.g. e4 e5 Nf3 -> e2e4 e7e5 g1f3).
+
 **-ff** surrender against the bot.
+
 **-cheat**  cheat at blindfold chess by viewing the board. the bot will also return the best move in the current position, and the stockfish evaluation.
+
 
 ## possible upcoming features
 1. ability to play against other people in the server via @mentions
