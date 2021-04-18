@@ -4,7 +4,7 @@ discord bot enabling chess enthusiasts who add this bot to their servers to play
 ## how do i start up this thing?
 follow these steps:
 
-0. install the requirements for this project (pip install -r requirements.txt)
+0. install the requirements for this project (pip install -r requirements.txt; requires python 3.6+)
 1. create a bot using the discord developer portal, because i don't have this hosted anywhere
 2. add your bot to your server (hint: you'll need your application ID for this)
 3. find your bot's secret token and put it in bot/keys.json, with the key being "discord" and the value being the secret token. i.e.:
