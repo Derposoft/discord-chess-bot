@@ -1,3 +1,4 @@
 keys.json
 *.db
+*.out
 __pycache__

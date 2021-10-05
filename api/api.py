@@ -52,20 +52,22 @@ def move():
     print("PLAYER MOVE GAMEOVER?: ", gameover_text)
     if gameover_text != '':
         # end game
+        print("PLAYER WIN!")
         db.delete(curr_game)
         return gameover_text
     # make engine move    
     best = engine_move(new_moves, curr_game.stockfish_elo)
     new_moves = new_moves + ' ' + best
     curr_game.moves = new_moves
-    db.commit()
     # did engine win?
     gameover_text = get_gameover_text(new_moves, player_just_moved=False)
     print("CPU MOVE GAMEOVER?: ", gameover_text)
     if gameover_text != '':
         # end game
+        print("CPU WIN!")
         db.delete(curr_game)
         return relay_move(best, args) + '\n' + gameover_text
+    db.commit()
     return relay_move(best, args)
 
 # accept the player's resignation
