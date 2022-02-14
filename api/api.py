@@ -1,4 +1,5 @@
-from utils import check_in_game, mention, parse_args, engine_move, check_move, relay_move, claim_victory, cheat_board, get_gameover_text
+from utils import check_in_game, mention, mention_player, parse_args, engine_move,\
+    check_move, check_in_pvp, relay_move, claim_victory, cheat_board, get_gameover_text
 from flask import Flask, url_for, request
 from db.database import db_session, Game
 
@@ -8,30 +9,44 @@ app = Flask(__name__)
 @app.route('/new')
 def new():
     args = parse_args(request)
+    db = db_session()
     # check to make sure player only chose black or white
     if args['side'] != 'white':
         if args['side'] != 'black':
             return 'you can only be \'white\' or \'black\' because this is chess OMEGALUL'
-    # check to make sure player doesn't already have a game
-    db = db_session()
-    curr_game = check_in_game(args['uid'], db)
-    if curr_game != None:
-        return 'bruh ur in a gam rn i will only ple 1 game with u at a time' + mention(args)
+    # this is a pvp game
+    game_id = ''
+    is_pvp = 'challenger' in args
+    if is_pvp:
+        curr_game = check_in_pvp(args['challenger'], args['challengee'], db)
+        if curr_game != None:
+            return f'bruhh you can only ple 1 game with a given person at once {mention(args)}'
+        game_id = f'{args["challenger"]},{args["challengee"]}'
+    # this is a vs CPU game
+    else:
+        # check to make sure player doesn't already have a game
+        curr_game = check_in_game(args['uid'], db)
+        if curr_game != None:
+            return f'bruh ur in a gam rn i will only ple 1 game with u at a time {mention(args)}'
+        game_id = args['uid']
     # check to see which side player is
     move = None
-    if args['side'] == 'white':
-        # add game to db if player is white
-        game = Game(uid=args['uid'], moves='', stockfish_elo=args['elo'], player_side='white')
-        db.add(game)
-        db.commit()
-    elif args['side'] == 'black':
-        # make a move and game to db if player is black
+    if args['side'] == 'black' and is_pvp:
+        # make a move and game to db if player is black and vs CPU
         move = engine_move('', args['elo'])
-        game = Game(uid=args['uid'], moves=move, stockfish_elo=args['elo'], player_side='black')
-        db.add(game)
-        db.commit()
+    # i'm using the stockfish_elo to hold which player's turn it is because i'm lazy. ez hack no judge me pls
+    elo = args['elo'] if not is_pvp else args['side'] == 'black'
+    game = Game(uid=game_id, moves=move, stockfish_elo=elo, player_side=args['side'])
+    db.add(game)
+    db.commit()
     # report back
-    return 'New game successfully started for %s' % args['name'] + '. ' + relay_move(move, args)
+    info_string = ''
+    if is_pvp:
+        p1, p2 = args['challenger'], args['challengee']
+        info_string = f'New game successfully started between {mention_player(p1)} and {mention_player(p2)}.'
+    else:
+        info_string = f'New game successfully started for {mention(args)}. {relay_move(move, args)}'
+    return info_string
 
 # make a move for the player
 @app.route('/move',methods = ['POST', 'GET'])
@@ -41,10 +56,10 @@ def move():
     db = db_session()
     curr_game = check_in_game(args['uid'], db)
     if curr_game == None:
-        return 'bruh ur not in a game rn' + mention(args)
+        return f'bruh ur not in a game rn {mention(args)}'
     # load the game in stockfish and verify that the move is legal
     if not check_move(curr_game.moves, args['move']):
-        return 'u can\'t play that lol' + mention(args)
+        return f'u can\'t play that lol {mention(args)}'
     # if move is legal, add the move
     new_moves = curr_game.moves + ' ' + args['move']
     # did player win?

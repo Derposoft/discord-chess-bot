@@ -11,9 +11,14 @@ def parse_args(request):
 
 def check_in_game(player_uid, db):
     return db.query(Game).filter_by(uid=player_uid).first()
+def check_in_pvp(p1_uid, p2_uid, db):
+    return db.query(Game).filter_by(uid=f'{p1_uid},{p2_uid}').first() or \
+        db.query(Game).filter_by(uid=f'{p2_uid},{p1_uid}').first()
 
-def mention(args):
-    return ' <@' + args['uid'] + '> '
+def mention(args): # legacy method -- use mention_player and delet this
+    return mention_player(args['uid'])
+def mention_player(player_uid):
+    return f'<@{player_uid}>'
 
 def check_move(moves, move):
     stockfish.set_position(_separate(moves))

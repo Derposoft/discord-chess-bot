@@ -1,4 +1,7 @@
+__pycache__/
+*.py[cod]
+
+
 keys.json
 *.db
 *.out
-__pycache__

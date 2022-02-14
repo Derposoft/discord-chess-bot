@@ -17,15 +17,27 @@ async def on_ready():
 
 @bot.command()
 async def new(ctx, side: str, elo: str = '1500'):
-    """starts a new chess game for the current user given an option of side: b, w, or r (random)"""
+    """starts a new chess game VS CPU for the current user given an option of side: b, w, or r (random)"""
     info = requests.get(config.API_URI + 'new?side=' + side.lstrip().rstrip() 
         + '&elo=' + elo + '&' + utils.user_info(ctx))
     await ctx.send(info.text)
+@bot.command()
+async def newpvp(ctx, side: str, player: str):
+    """starts a new chess game VS @mention for the current user given an option of side: b, w, or r (random)"""
+    challenger_uid = utils.user_info(ctx)
+    challengee_uid = player[3:-1] # cuts out the '<@!' and '>' and the start and end
+    info = requests.get(config.API_URI + 'new?side=' + side.lstrip().rstrip() 
+        + '&challengee=' + challengee_uid + '&challenger=' + challenger_uid)
+    await ctx.send(info.text)
 
 @bot.command()
-async def move(ctx, move):
-    """makes a move in the currently running game"""
-    info = requests.get(config.API_URI + 'move?move=' + move + '&' + utils.user_info(ctx))
+async def move(ctx, move: str, player: str = ''):
+    """makes a move in a currently running game. add an @mention at end for a pvp game."""
+    pstring = ''
+    if player != '':
+        # is a pvp game
+        pstring = f'&opponent={player}'
+    info = requests.get(f'{config.API_URI}move?move={move}&{utils.user_info(ctx)}{pstring}')
     await ctx.send(info.text)
 
 @bot.command()
