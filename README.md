@@ -1,6 +1,9 @@
 # discord chess bot
 a discord bot enabling chess enthusiasts who add this bot to their servers to play blindfold chess in discord chat! designed to be a lightweight bot, possibly for embedded applications (i personally host this on my raspberry pi at home!), while still being sophisticated enough to bring excitement to your discord server. this is really just a simple discord API usage layered over the python stockfish library.
 
+**2/14/2022 UPDATE:**
+lads and lasses, the time has come. you can now play blindfolded chess versus each other instead of versus the bot. commandlist below is update to reflect the updates.
+
 ## how do i start up this thing?
 follow these steps:
 
@@ -18,23 +21,23 @@ follow these steps:
 the bot is now ready to use pog
 
 ## ok but how do i use the bot once it's up and running?
-the commands are simple:
+the commands are simple ([parameter] = optional):
 
 **-help**   list the commands
 
-**-new [white|black] [elo]**  start a new game either as white or black with the given stockfish elo opponent. if no elo is given. elo=1500 will be used.
+**-new white|black [elo/@mention]**  start a new game either as white or black with either the given stockfish elo or the opponent that you @mentioned in the server. if no elo/mention is given, a default of elo=1500 will be used.
 
-**-move [move]**    make a move. moves must be in full algebraic notation (e.g. e4 e5 Nf3 -> e2e4 e7e5 g1f3).
+**-move move [@mention]**    make a move. moves must be in full algebraic notation (e.g. e4 e5 Nf3 -> e2e4 e7e5 g1f3). if @mention is included, the move will be made in the game between you and the mentioned player. otherwise, your current game versus stockfish is used.
 
-**-ff** surrender against the bot.
+**-ff [@mention]** surrender against the bot (or against your opponent if @mention is used).
 
-**-cheat**  cheat at blindfold chess by viewing the board. the bot will also return the best move in the current position, and the stockfish evaluation.
+**-cheat [@mention]**  cheat at blindfold chess by viewing the board. the bot will also return the best move in the current position, and the stockfish evaluation. you can choose which active game to cheat in by adding an @mention.
 
 
 ## possible upcoming features
-1. ability to play against other people in the server via @mentions
-2. use of easier notation (e.g. 'Nf3' instead of 'g1f3')
-3. ???
+- [x] ability to play against other people in the server via @mentions
+- [ ] use of easier notation (e.g. 'Nf3' instead of 'g1f3')
+- [ ] ???
 
 ## also, here are some screenshots of the bot in action once you've set it up right
 
