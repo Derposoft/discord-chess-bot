@@ -12,13 +12,19 @@ def parse_args(request):
 def check_in_game(player_uid, db):
     return db.query(Game).filter_by(uid=player_uid).first()
 def check_in_pvp(p1_uid, p2_uid, db):
-    return db.query(Game).filter_by(uid=f'{p1_uid},{p2_uid}').first() or \
-        db.query(Game).filter_by(uid=f'{p2_uid},{p1_uid}').first()
+    #print(f'checking {p1_uid},{p2_uid} and {p2_uid},{p1_uid}')
+    p12 = f'{p1_uid},{p2_uid}'
+    p21 = f'{p2_uid},{p1_uid}'
+    p1p2 = db.query(Game).filter_by(uid=p12).first()
+    p2p1 = db.query(Game).filter_by(uid=p21).first()
+    print("GAMES FOUND", p1p2, p2p1)
+    return  p1p2 if p1p2 else p2p1
+        
 
 def mention(args): # legacy method -- use mention_player and delet this
     return mention_player(args['uid'])
 def mention_player(player_uid):
-    return f'<@{player_uid}>'
+    return f'<@!{player_uid}>'
 
 def check_move(moves, move):
     stockfish.set_position(_separate(moves))
@@ -36,8 +42,12 @@ def relay_move(move, args):
 def claim_victory(moves, args):
     stockfish.set_position(_separate(moves))
     return mention(args) + 'get rekt noob i win again KEKW final board state:\n' + '```' + stockfish.get_board_visual() + '```' + '\nmoves: ' + moves
+def pvp_claim_victory(moves, args):
+    stockfish.set_position(_separate(moves))
+    return f'{mention(args)} lmao {mention_player(args["opponent"])} stands above you again, you plebe:\n' + '```' + stockfish.get_board_visual() + '```' + '\nmoves: ' + moves
 
 def cheat_board(moves):
+    print('moves', moves)
     stockfish.set_position(_separate(moves))
     board = stockfish.get_board_visual()
     eval = stockfish.get_evaluation()
