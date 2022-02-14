@@ -2,7 +2,9 @@
 a discord bot enabling chess enthusiasts who add this bot to their servers to play blindfold chess in discord chat! designed to be a lightweight bot, possibly for embedded applications (i personally host this on my raspberry pi at home!), while still being sophisticated enough to bring excitement to your discord server. this is really just a simple discord API usage layered over the python stockfish library.
 
 **2/14/2022 UPDATE:**
-lads and lasses, the time has come. you can now play blindfolded chess versus each other instead of versus the bot. commandlist below is update to reflect the updates.
+lads and lasses, the time has come. you can now play blindfolded chess versus each other instead of versus the bot. commandlist below is update to reflect the updates. since the database schema didn't change in this update, all of your old games with the bot will remain even if you update your version of the bot.
+
+pls raise issue if there are bugs, i didn't have a lot of time to test it this time around.
 
 ## how do i start up this thing?
 follow these steps:
@@ -17,6 +19,10 @@ follow these steps:
 4. install stockfish on your local machine. for debian-based linux machines, this looks something like running "sudo apt-get install stockfish".
 5. run 'bot/bot.py'
 6. run 'api/api.py'
+
+!IMPORTANT the bot assumes that a (executable) binary pointing to stockfish is located at "/usr/games/stockfish". running the command in step 4 should automatically do this; but if it doesn't, you can either:
+- add an executable symlink from /usr/games/stockfish to your binary of stockfish
+- change the string on line 4 of api/utils.py to point to your binary of stockfish instead of the default location
 
 the bot is now ready to use pog
 
