@@ -1,4 +1,3 @@
-from curses.ascii import isdigit
 import discord
 from discord.ext import commands
 import json
@@ -18,21 +17,13 @@ async def on_ready():
 
 @bot.command()
 async def new(ctx, side: str, elo: str = '1500'):
-    """starts a new chess game VS CPU for the current user given an option of side: b, w, or r (random)"""
-    if isdigit(elo):
+    """starts a new chess game VS CPU/human for the current user given an option of side: b, w, or r (random)."""
+    if utils.is_elo(elo):
         info = requests.get(config.API_URI + 'new?side=' + side.lstrip().rstrip() 
             + '&elo=' + elo + '&' + utils.user_info(ctx))
     else:
         info = requests.get(config.API_URI + 'new?side=' + side.lstrip().rstrip() 
             + '&challengee=' + utils.mention_parser(elo) + '&challenger=' + str(ctx.author.id))
-    await ctx.send(info.text)
-@bot.command()
-async def newpvp(ctx, side: str, player: str):
-    """starts a new chess game VS @mention for the current user given an option of side: b, w, or r (random)"""
-    challenger_uid = str(ctx.author.id)
-    challengee_uid = utils.mention_parser(player)
-    info = requests.get(config.API_URI + 'new?side=' + side.lstrip().rstrip() 
-        + '&challengee=' + challengee_uid + '&challenger=' + challenger_uid)
     await ctx.send(info.text)
 
 @bot.command()

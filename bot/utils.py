@@ -6,6 +6,11 @@ def user_info(ctx):
 def mention_parser(user):
     return user[3:-1] # cuts out the '<@!' and '>' and the start and end
 
+# is 'elo' parameter a number?
+def is_elo(elo):
+    nums = '0123456789'
+    return all([c in nums for c in elo])
+
 # add an extra query param in case of a pvp request
 def pvpstring(player):
     pstring = ''
