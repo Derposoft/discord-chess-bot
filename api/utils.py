@@ -1,7 +1,7 @@
 from db.database import Game
 from stockfish import Stockfish
 import chess
-stockfish = Stockfish('/usr/games/stockfish')
+stockfish = Stockfish('D:\gitproj\stockfish_14.1_win_x64_avx2\stockfish_14.1_win_x64_avx2.exe')
 
 def _separate(moves):
     return [move for move in moves.split(' ') if move != '']

@@ -1,0 +1,13 @@
+{
+    "keys": {
+        "discord": "SOME_EXAMPLE_KEY" 
+    },
+
+    "api": {
+        "url": "http://localhost:5000"
+    },
+
+    "bot": {
+        "prefix": "-"
+    }
+}
