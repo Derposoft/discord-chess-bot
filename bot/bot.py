@@ -22,6 +22,9 @@ with open(args.configPath, 'r') as configFile:
     utils.safeDictCopyDefault(config, ['prefix'], data, ['bot', 'prefix'], '-')
     utils.safeDictCopyDefault(config, ['botDesc'], data, ['bot', 'description'], 'blindfold chess bot')
 
+if 'key' not in config:
+    exit(1)
+
 ### Initialize bot
 intents = discord.Intents.default()
 intents.members = True
