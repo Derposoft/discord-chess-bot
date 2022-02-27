@@ -8,7 +8,7 @@ members or to play against the Stockfish AI. Use -h or --help for information ab
 
 argparser = argparse.ArgumentParser(description=description)
 argparser.add_argument("-f", "--file", "--config", dest="configPath", default="./config.json", help = "File Path to Config File")
-argparser.add_argument("-u", "--host", dest="url", default="http://localhost:5000", help="url for acessing discord bot rest api")
+argparser.add_argument("-u", "--host", dest="url", default="http://localhost:5000/", help="url for acessing discord bot rest api")
 args = argparser.parse_args()
 
 config = {'url': args.url}
@@ -17,8 +17,8 @@ print(f"Loading config file from {args.configPath}")
 with open(args.configPath, 'r') as configFile:
     data = json.load(configFile)
     utils.safeDictCopy(config, ['key'], data, ['keys', 'discord'], lambda: print("No Key Provided to Bot!", file=sys.stderr))
-    utils.safeDictCopy(config, ['url'], data, ['api', 'url'])
-    utils.safeDictCopy(config, ['password'], data, ['api', 'password'])
+    utils.safeDictCopy(config, ['url'], data, ['bot', 'url'])
+    utils.safeDictCopy(config, ['password'], data, ['bot', 'password'])
     utils.safeDictCopyDefault(config, ['prefix'], data, ['bot', 'prefix'], '-')
     utils.safeDictCopyDefault(config, ['botDesc'], data, ['bot', 'description'], 'blindfold chess bot')
 

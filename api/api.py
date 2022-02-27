@@ -1,7 +1,29 @@
 from utils import check_in_game, mention, mention_player, parse_args, engine_move,\
-    check_move, check_in_pvp, relay_move, claim_victory, cheat_board, get_gameover_text, pvp_claim_victory
+    check_move, check_in_pvp, relay_move, claim_victory, cheat_board, get_gameover_text, pvp_claim_victory, safeDictCopyDefault
 from flask import Flask, url_for, request
 from db.database import db_session, Game
+from stockfish import Stockfish
+import argparse, json
+
+### Get Command Line Arguments and configuration
+description = """Chess Move Restful API"""
+
+argparser = argparse.ArgumentParser(description=description)
+argparser.add_argument("-f", "--file", "--config", dest="configPath", default="./config.json", help = "File Path to Config File")
+argparser.add_argument("--db", "--database", dest="db", default="sqlite:///storage.db", help="SQL URI for accessing SQL database")
+args = argparser.parse_args()
+
+config = {'db': args.db}
+
+print(f"Loading config file from {args.configPath}")
+with open(args.configPath, 'r') as configFile:
+    data = json.load(configFile)
+    safeDictCopyDefault(config, ['host'], data, ['api', 'host'], "0.0.0.0")
+    safeDictCopyDefault(config, ['port'], data, ['api', 'port'], 8000)
+    safeDictCopyDefault(config, ['stockfish'], data, ['api', 'stockfish'], '/usr/games/stockfish')
+
+# TODO Add DB Init here
+stockfish = Stockfish(config['stockfish'])
 
 app = Flask(__name__)
 
@@ -35,7 +57,7 @@ def new():
     move = ''
     if args['side'] == 'black' and not is_pvp:
         # make a move and game to db if player is black and vs CPU
-        move = engine_move('', args['elo'])
+        move = engine_move(stockfish, '', args['elo'])
     # i'm using the stockfish_elo to hold which player's turn it is because i'm lazy. ez hack no judge me pls
     elo = args['elo'] if not is_pvp else args['side'] == 'black'
     game = Game(uid=game_id, moves=move, stockfish_elo=elo, player_side=args['side'])
@@ -71,14 +93,14 @@ def move():
         if args['uid'] != curr_game.uid.split(',')[player_num]:
             return f'it not ur turn lol?? {mention(args)}'
     # load the game in stockfish and verify that the move is legal
-    if not check_move(curr_game.moves, args['move']):
+    if not check_move(stockfish, curr_game.moves, args['move']):
         return f'u can\'t play that lol {mention(args)}'
     # if move is legal, add the move (and switch player turn if pvp)
     new_moves = curr_game.moves + ' ' + args['move']
     if is_pvp:
         curr_game.stockfish_elo = 1-curr_game.stockfish_elo
     # did player win?
-    gameover_text = get_gameover_text(new_moves, player_just_moved=True)
+    gameover_text = get_gameover_text(stockfish, new_moves, player_just_moved=True)
     print("PLAYER MOVE GAMEOVER?: ", gameover_text)
     if gameover_text != '':
         # end game
@@ -87,11 +109,11 @@ def move():
         return gameover_text
     # make engine move if vs cpu
     if not is_pvp:
-        best = engine_move(new_moves, curr_game.stockfish_elo)
+        best = engine_move(stockfish, new_moves, curr_game.stockfish_elo)
         new_moves = new_moves + ' ' + best
     curr_game.moves = new_moves
     # did engine/person win?
-    gameover_text = get_gameover_text(new_moves, player_just_moved=False)
+    gameover_text = get_gameover_text(stockfish, new_moves, player_just_moved=False)
     print("CPU MOVE GAMEOVER?: ", gameover_text)
     if gameover_text != '':
         # end game
@@ -121,9 +143,9 @@ def ff():
     db.delete(curr_game)
     db.commit()
     if not is_pvp:
-        return claim_victory(curr_game.moves, args)
+        return claim_victory(stockfish, curr_game.moves, args)
     else:
-        return pvp_claim_victory(curr_game.moves, args)
+        return pvp_claim_victory(stockfish, curr_game.moves, args)
 
 # allow the player to cheat
 @app.route('/cheat',methods = ['POST', 'GET'])
@@ -140,7 +162,7 @@ def cheat():
     if curr_game == None:
         return 'bruh ur not in a game rn' + mention(args)
     # return cheats
-    board, eval, best = cheat_board(curr_game.moves)
+    board, eval, best = cheat_board(stockfish, curr_game.moves)
 
     return board + '\n' + eval + '\n' + best + '\n' + 'that good enough for you? stupid cheater' + mention(args)
 
