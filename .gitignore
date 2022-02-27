@@ -6,3 +6,4 @@ keys.json
 config.json
 *.db
 *.out
+*.log
