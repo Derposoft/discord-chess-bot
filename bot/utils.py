@@ -1,9 +1,9 @@
 # Takes two dictionaries and 2 lookups. Assigns the value if it exists otherwise assigns it to default
-def safeDictCopyDefault(recv, recvpath, send, sendpath, default):
-    safeDictCopy(recv, recvpath, send, sendpath, lambda: default)
+def safe_dict_copy_default(recv, recvpath, send, sendpath, default):
+    safe_dict_copy(recv, recvpath, send, sendpath, lambda: default)
 
 # Takes two dictionaries and 2 lookups. Assigns the value if it exists otherwise calls supplier. Will not assign index to "None"
-def safeDictCopy(recv, recvpath, send, sendpath, supplier=lambda: None):
+def safe_dict_copy(recv, recvpath, send, sendpath, supplier=lambda: None):
     if recvpath is None or len(recvpath) == 0:
         raise ValueError("Indexes for receiving dictionary are empty or None") 
     elif sendpath is None or len(sendpath) == 0:

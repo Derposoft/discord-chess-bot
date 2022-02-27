@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
-import json, requests, utils, sys, argparse, logging
-import dummylog
+import json, requests, sys, argparse, logging
+import dummylog, utils
 
 ### Get Command Line Arguments and configuration
 description = """Discord Chess Bot is a simple application to play againt other server
@@ -23,12 +23,12 @@ config = {
 print(f"Loading config file from {args.configPath}")
 with open(args.configPath, 'r') as configFile:
     data = json.load(configFile)
-    utils.safeDictCopy(config, ['key'], data, ['keys', 'discord'], lambda: print("No Key Provided to Bot!", file=sys.stderr))
-    utils.safeDictCopy(config, ['url'], data, ['bot', 'url'])
-    utils.safeDictCopy(config, ['password'], data, ['bot', 'password'])
-    utils.safeDictCopyDefault(config, ['prefix'], data, ['bot', 'prefix'], '-')
-    utils.safeDictCopyDefault(config, ['botDesc'], data, ['bot', 'description'], 'blindfold chess bot')
-    utils.safeDictCopy(config, ['log'], data, ['bot', 'log'])
+    utils.safe_dict_copy(config, ['key'], data, ['keys', 'discord'], lambda: print("No Key Provided to Bot!", file=sys.stderr))
+    utils.safe_dict_copy(config, ['url'], data, ['bot', 'url'])
+    utils.safe_dict_copy(config, ['password'], data, ['bot', 'password'])
+    utils.safe_dict_copy_default(config, ['prefix'], data, ['bot', 'prefix'], '-')
+    utils.safe_dict_copy_default(config, ['botDesc'], data, ['bot', 'description'], 'blindfold chess bot')
+    utils.safe_dict_copy(config, ['log'], data, ['bot', 'log'])
 
 if 'key' not in config:
     exit(1)
@@ -55,6 +55,8 @@ bot = commands.Bot(command_prefix=config['prefix'], description=config['botDesc'
 async def on_ready():
     print(f'logged on as {bot.user.name}{bot.user.id}!')
 
+# BUG Users can create games with the bot rather than with the computer. Bot may need to filter
+# and respond with a catchy phrase
 @bot.command()
 async def new(ctx, side: str, eloOrMention: str = '1500'):
     """starts a new chess game VS CPU/human for the current user given an option of side: b, w, or r (random)."""
