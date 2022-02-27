@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-import json, requests, utils, sys, os, argparse
+import json, requests, utils, sys, argparse
 
 ### Get Command Line Arguments and configuration
 description = """Discord Chess Bot is a simple application to play againt other server

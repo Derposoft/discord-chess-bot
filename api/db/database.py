@@ -3,16 +3,27 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, Integer
 
-engine = create_engine(
-    'sqlite:///storage.db',
-    echo=True,
-    connect_args={'check_same_thread': False}
-)
-Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
 Base = declarative_base()
+Session = None
+
+def init(dbURI):
+    # I don't think Engine should be garbage collected since we
+    #    bind it to Session. Engine should still have a reference
+    engine = create_engine(
+        dbURI,
+        echo=True,
+        connect_args={'check_same_thread': False}
+    )
+    
+    global Session
+    Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base.metadata.create_all(engine)
+
 
 def db_session():
+    if Session is None:
+        raise RuntimeError("DB Session Was never initialized!")
+
     return Session()
 
 class Game(Base):
@@ -23,4 +34,3 @@ class Game(Base):
     stockfish_elo = Column(Integer)
     player_side = Column(String)
     
-Base.metadata.create_all(engine)

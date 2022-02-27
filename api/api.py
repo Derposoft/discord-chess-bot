@@ -1,7 +1,7 @@
 from utils import check_in_game, mention, mention_player, parse_args, engine_move,\
     check_move, check_in_pvp, relay_move, claim_victory, cheat_board, get_gameover_text, pvp_claim_victory, safeDictCopyDefault
 from flask import Flask, url_for, request
-from db.database import db_session, Game
+from db.database import init, db_session, Game
 from stockfish import Stockfish
 import argparse, json
 
@@ -22,7 +22,7 @@ with open(args.configPath, 'r') as configFile:
     safeDictCopyDefault(config, ['port'], data, ['api', 'port'], 8000)
     safeDictCopyDefault(config, ['stockfish'], data, ['api', 'stockfish'], '/usr/games/stockfish')
 
-# TODO Add DB Init here
+init(config['db'])
 stockfish = Stockfish(config['stockfish'])
 
 app = Flask(__name__)
