@@ -9,22 +9,36 @@ pls raise issue if there are bugs, i didn't have a lot of time to test it this t
 ## how do i start up this thing?
 follow these steps:
 
-0. install the requirements for this project (pip install -r requirements.txt; requires python 3.6+)
-1. create a bot using the discord developer portal, because i don't have this hosted anywhere
-2. add your bot to your server (hint: you'll need your application ID for this)
-3. find your bot's secret token and put it in bot/keys.json, with the key being "discord" and the value being the secret token. i.e.:
-{
-    "discord": "[secret token]"
+0. install python 3 (version 3.6+) and pip (21.0+) (for Linux this is most likely installed. For other platforms [look online](https://www.python.org/downloads/).)
+1. install the requirements for this project `pip install -r requirements.txt`
+2. create an application with associated bot using the [discord developer portal](https://discord.com/developers/applications).
+3. Add Privaledged Gateway Intents (Presence Intent, Server Members Intent, and Message Content Intent)
+4. Add your application/bot to your server. This can be done through the OAuth URL generator or alternatively through the server with application ID.
+5. Create a `config.json` based on the `config.example.json`
+6. Copy your bot's secret token and put it in `config.json`, with the key being "discord" and the value being the secret token. i.e.:
+```json
+"keys": {
+    "discord": "SECRET_KEY_HERE" 
 }
-4. install stockfish on your local machine. for debian-based linux machines, this looks something like running "sudo apt-get install stockfish".
-5. run 'bot/bot.py'
-6. run 'api/api.py'
-
-!IMPORTANT the bot assumes that a (executable) binary pointing to stockfish is located at "/usr/games/stockfish". running the command in step 4 should automatically do this; but if it doesn't, you can either:
-- add an executable symlink from /usr/games/stockfish to your binary of stockfish
-- change the string on line 4 of api/utils.py to point to your binary of stockfish instead of the default location
+```
+7. Download/Install Stockfish on your local machine. for debian-based linux machines, this looks something like running `sudo apt-get install stockfish`.
+8. Copy the stockfish filepath to your `config.json`
+```json
+"api": {
+    //...
+    "stockfish": "path_to_stockfish_executable"
+},
+```
 
 the bot is now ready to use pog
+
+### Running the Scripts
+#### LINUX
+From the root of the repository run `python api/api.py & python bot/bot.py &`
+#### Windows (Batch/CMD)
+From the root of the repository run `start python api/api.py & start python bot/bot.py`
+#### NOTE
+These will start background processes. To kill these processes it may only be possible to kill/end them via Task Manager or `ps` + signal command for Linux/Mac.
 
 ## ok but how do i use the bot once it's up and running?
 the commands are simple ([parameter] = optional):
