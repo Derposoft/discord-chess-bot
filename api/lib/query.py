@@ -82,9 +82,12 @@ def _get_moves_string_with_session(db, game):
     move_rows = db.query(Move).\
             filter_by(game_id=game.id).\
             all()
-
+    
     builder = ""
     for move_row in move_rows:
+        if builder != "":
+            builder += " "
+            
         builder += move_row.move
     
     return builder
@@ -131,7 +134,7 @@ def check_users_turn(game, mover):
                 first()
     mover_is_author = game.author_id == mover.id
     author_is_white = game.author_is_white
-    its_whites_turn = not last_move.white_move
+    its_whites_turn = last_move == None or not last_move.white_move
 
     return (author_is_white == its_whites_turn) == mover_is_author
 

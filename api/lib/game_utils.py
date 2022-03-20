@@ -51,7 +51,7 @@ def move_pvp_game(mover, game, move_intent, stockfish):
     if not chessboard.check_move(stockfish, moves, move_intent):
         return utils.respond(f'u can\'t play that lol {utils.mention_db_player(mover)}', 400)
 
-    if not query.add_move_to_game(game, move_intent, utils.is_white_move(game.author_id, game.is_author_white, mover.id)):
+    if not query.add_move_to_game(game, move_intent, utils.is_white_move(game.author_id, game.author_is_white, mover.id)):
         return utils.respond(f'Something Went Wrong in Making that Move (Are u hecking bro?)', 500)
 
     moves += move_intent
@@ -126,8 +126,9 @@ def get_game(mover, opponent, is_ai):
     game = None
     if opponent_p is None and not is_ai:
         game = query.get_recent_game(mover_p)
-        if game != None:
-            is_pvp = game.invitee_id != STOCKFISH_INVITEE_ID 
+        if game != None and game.invitee_id != STOCKFISH_INVITEE_ID:
+            is_pvp = True
+            opponent_p = query.get_participant_from_id(game.invitee_id)
     elif opponent_p is None:
         is_pvp = False
         game = query.get_solo_game(mover_p)

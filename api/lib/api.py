@@ -114,7 +114,7 @@ def new():
         return utils.respond(f'Author Participant Does Not Exist!', 430)
 
     logger.debug(f'Attempting Creation for pvp game {author} and {invitee}')
-    curr_game = query.get_pvp_game(author, invitee)
+    curr_game = query.get_pvp_game(author_p, invitee_p)
     if curr_game != None:
         return utils.respond(f'bruhh you can only ple 1 game with a given person at once {utils.mention_player(author)}', 401)
     
@@ -188,9 +188,10 @@ def cheat():
         return response.get_error()
     
     game = response.get_game()
+    moves = query.get_moves_string(game)
 
     # return cheats
-    board, eval, best = chessboard.cheat_board(stockfish_app, game)
+    board, eval, best = chessboard.cheat_board(logger, stockfish_app, moves)
 
     return utils.respond(f'{board}\n{eval}\n{best}\nthat good enough for you? stupid cheater {utils.mention_player(mover)}', 200)
 
