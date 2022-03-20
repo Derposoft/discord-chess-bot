@@ -1,8 +1,8 @@
-from db.database import GameArchive, init as init_db
-from db.database import db_session, GameLegacy,\
+from .db.database import GameArchive, init as init_db
+from .db.database import db_session, GameLegacy,\
     Participant, Game, Move
 
-from constants import STOCKFISH_INVITEE_ID
+from .constants import STOCKFISH_INVITEE_ID
 
 def init(dbURL):
     init_db(dbURL)
@@ -24,9 +24,9 @@ def get_participant_from_id(db_id):
     return db.query(Participant).filter_by(id=db_id).first()
 
 def create_participant(user_id, guild_id):
+    db = db_session()
     try:
-        db = db_session()
-        p = Participant(user_id = user_id, guild_id = guild_id)
+        p = Participant(discord_user_id = user_id, discord_guild_id = guild_id)
         db.add(p)
         db.commit()
         return True
@@ -35,8 +35,8 @@ def create_participant(user_id, guild_id):
         return False
 
 def update_participant(user_id, guild_id):
+    db = db_session()
     try:
-        db = db_session()
         user = _get_participant_with_session(db, user_id)
         user.guild_id = guild_id
         db.commit()
@@ -83,8 +83,8 @@ def _get_moves_string_with_session(db, game):
     return builder
 
 def create_solo_game(participant, elo, player_is_white):
+    db = db_session()
     try:
-        db = db_session()
         game = Game(participant_id = participant.id, invitee_id = STOCKFISH_INVITEE_ID, stockfish_elo = elo, author_is_white = player_is_white)
         db.add(game)
         db.commit()
@@ -94,8 +94,8 @@ def create_solo_game(participant, elo, player_is_white):
         return False
 
 def create_pvp_game(author, invitee, author_is_white):
+    db = db_session()
     try:
-        db = db_session()
         game = Game(author_id = author.id, invitee_id = invitee.id, stockfish_elo = None, author_is_white = author_is_white)
         db.add(game)
         db.commit()
@@ -106,8 +106,8 @@ def create_pvp_game(author, invitee, author_is_white):
 
 # BUG make this a stored-procedure/transaction to eliminate data race (2 turns in a row)
 def add_move_to_game(game, move, isWhiteMove):
+    db = db_session()
     try:
-        db = db_session()
         move_row = Move(game_id = game.id, move = move, white_move = isWhiteMove)
         db.add(move_row)
         db.commit()
@@ -129,9 +129,8 @@ def check_users_turn(game, mover):
     return (author_is_white == its_whites_turn) == mover_is_author
 
 def archive_game(game):
+    db = db_session()
     try:
-        db = db_session()
-
         game_archive = GameArchive(
             author_id = game.author_id, 
             invitee_id = game.invitee_id, 

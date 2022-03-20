@@ -34,11 +34,18 @@ the bot is now ready to use pog
 
 ### Running the Scripts
 #### LINUX
-From the root of the repository run `python api/api.py & python bot/bot.py &`
+From the root of the repository run `python -m api & python -m bot &`
 #### Windows (Batch/CMD)
-From the root of the repository run `start python api/api.py & start python bot/bot.py`
+From the root of the repository run `start python -m api & start python -m bot`
 #### NOTE
 These will start background processes. To kill these processes it may only be possible to kill/end them via Task Manager or `ps` + signal command for Linux/Mac.
+
+## Automated Testing
+I added a second requirements list for dev testing. `requirements-dev` which can be installed via `pip install -r requirements-dev.txt`. Then go ahead and run via pytest.
+
+1. `pip install -r requirements-dev.txt`
+2. `python -m pytest --config="test-config.json" ./api` with `test-config.json` being the same as `config.example.json` but with test/breakable values (don't use the production database)
+3. `python -m pytest --config="test-config.json" ./bot` same as above with `test-config.json` (it uses the same file too)
 
 ## ok but how do i use the bot once it's up and running?
 the commands are simple ([parameter] = optional):

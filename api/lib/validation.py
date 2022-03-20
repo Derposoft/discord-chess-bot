@@ -1,4 +1,4 @@
-from constants import BLACK, WHITE
+from .constants import BLACK, WHITE
 
 def validate_new_game(is_pvp, side, author, invitee):
     if side != WHITE and side != BLACK:

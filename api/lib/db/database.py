@@ -43,7 +43,7 @@ class Participant(Base):
 
     id=Column(Integer, primary_key=True, autoincrement=True)
     discord_user_id=Column(String, unique=True)
-    dicord_guild_id=Column(String, unique=True)
+    discord_guild_id=Column(String, unique=True)
     last_updated = Column(TIMESTAMP, nullable=False, server_default=sqlfunc.current_timestamp(), server_onupdate=text(f' ON UPDATE {sqlfunc.current_timestamp()}'))
 
 # BUG One could create 2 games per duo by inviting eachother to their own game

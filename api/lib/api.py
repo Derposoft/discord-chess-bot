@@ -1,44 +1,23 @@
-from flask import Flask, url_for, request, make_response
+from logging import root
+from flask import Flask, request, make_response, Blueprint
 from stockfish import Stockfish
 import argparse, json
+import sys
 
 # Local Imports
-import chessboard
-import dao
-import utils
-import validation
-from constants import BLACK, WHITE, STOCKFISH_INVITEE_ID
+from . import chessboard, dao, utils, validation
+from .constants import BLACK, WHITE, STOCKFISH_INVITEE_ID
 
+# BUG (see chessboard.py)
+stockfish_app = None
 
-### Get Command Line Arguments and configuration
-description = """Chess Move Restful API"""
+# Other modules may load logger by using
+#  log = logging.getLogger('some name here')
+logger = None
 
-argparser = argparse.ArgumentParser(description=description)
-argparser.add_argument("-f", "--file", "--config", dest="configPath", default="./config.json", help = "File Path to Config File")
-argparser.add_argument("--db", "--database", dest="db", default="sqlite:///storage.db", help="SQL URI for accessing SQL database")
-args = argparser.parse_args()
+root = Blueprint('root', __name__)
 
-config = {
-    'db': args.db,
-    'log': args.log,
-    'quiet': args.quiet
-    }
-
-print(f"Loading config file from {args.configPath}")
-with open(args.configPath, 'r') as configFile:
-    data = json.load(configFile)
-    utils.safe_dict_copy_default(config, ['host'], data, ['api', 'host'], "0.0.0.0")
-    utils.safe_dict_copy_default(config, ['port'], data, ['api', 'port'], 8000)
-    utils.safe_dict_copy_default(config, ['stockfish-path'], data, ['api', 'stockfish', 'path'], '/usr/games/stockfish')
-    utils.safe_dict_copy_default(config, ['stockfish-depth'], data, ['api', 'stockfish', 'depth'], 15)
-    utils.safe_dict_copy_default(config, ['stockfish-params'], data, ['api', 'stockfish'], {})
-
-dao.init(config['db'])
-stockfish_app = Stockfish(path=config['stockfish-path'], depth=config['stockfish-depth'], parameters=config['stockfish-params'])
-
-app = Flask(__name__)
-
-@app.route('/signup', methods = ['POST'])
+@root.route('/signup', methods = ['POST'])
 def create_user():
     args = utils.parse_args(request)
     user_id = utils.get_first_valid_index(args, ['user'])
@@ -53,11 +32,11 @@ def create_user():
         return make_response(f'That user already exists Master -.o', 401)
 
     if dao.create_participant(user_id, guild_id):
-        return make_response(f'Created User M8!', 202)
+        return make_response(f'Created User M8!', 201)
     
     return make_response(f'UWU I couldn\'t make that for you sir >.<', 500)
 
-@app.route('/change-user', methods = ['POST'])
+@root.route('/change-user', methods = ['POST'])
 def update_user():
     args = utils.parse_args(request)
     user_id = utils.get_first_valid_index(args, ['user'])
@@ -67,11 +46,11 @@ def update_user():
         return make_response(f'That user doesn\'t exist pleb >:O', 401)
     
     if dao.update_participant(user_id, guild_id):
-        return make_response(f'Update Done!', 201)
+        return make_response(f'Update Done!', 202)
     
     return make_response(f'OH NO... WHY COULDN\'T I MAKE AN UPDATE ._.', 500)
 
-@app.route('/get-user', methods = ['GET'])
+@root.route('/get-user', methods = ['GET'])
 def get_user():
     args = utils.parse_args(request)
     user_id = utils.get_first_valid_index(args, ['user'])
@@ -83,7 +62,7 @@ def get_user():
     return make_response(f'{user.id}', 200)
 
 # creates a new game for the player
-@app.route('/new-game/ai', methods = ['POST'])
+@root.route('/new-game/ai', methods = ['POST'])
 def new_stockfish():
     args = utils.parse_args(request)
     author = utils.get_first_valid_index(args, ['author'])
@@ -115,7 +94,7 @@ def new_stockfish():
     return make_response(f'New game successfully started for {utils.mention_player(author)}. {utils.relay_move(author, move)}', 200)
 
 
-@app.route('/new-game/pvp', methods = ['POST'])    
+@root.route('/new-game/pvp', methods = ['POST'])    
 def new():
     args = utils.parse_args(request)
     author = utils.get_first_valid_index(args, ['author'])
@@ -135,7 +114,7 @@ def new():
     if invitee_p is None:
         return make_response(f'Author Participant Does Not Exist!', 430)
 
-    app.logger.debug(f'Attempting Creation for pvp game {author} and {invitee}')
+    logger.debug(f'Attempting Creation for pvp game {author} and {invitee}')
     curr_game = dao.get_pvp_game(author, invitee)
     if curr_game != None:
         return make_response(f'bruhh you can only ple 1 game with a given person at once {utils.mention_player(author)}', 401)
@@ -145,7 +124,7 @@ def new():
     return f'New game successfully started between {utils.mention_player(author)} and {utils.mention_player(invitee)}.'
 
 # make a move for the player
-@app.route('/move',methods = ['POST', 'GET'])
+@root.route('/move',methods = ['POST', 'GET'])
 def move():
     args = utils.parse_args(request)
     mover = utils.get_first_valid_index(args, ['self'])
@@ -171,7 +150,7 @@ def move():
         return move_ai_game(mover_p, game, move_intent)
 
 # accept the player's resignation
-@app.route('/ff',methods = ['POST', 'GET'])
+@root.route('/ff',methods = ['POST', 'GET'])
 def ff():
     args = utils.parse_args(request)
     mover = utils.get_first_valid_index(args, ['self'])
@@ -206,7 +185,7 @@ def ff():
         return ai_claim_victory(moves, mover_p)
 
 # allow the player to cheat
-@app.route('/cheat',methods = ['POST', 'GET'])
+@root.route('/cheat',methods = ['POST', 'GET'])
 def cheat():
     args = utils.parse_args(request)
     mover = utils.get_first_valid_index(args, ['self'])
@@ -239,10 +218,10 @@ def move_ai_game(author, game, move_intent):
     moves += move_intent
 
     # did player win?
-    gameover_text = chessboard.get_gameover_text(app.logger, stockfish_app, moves, True)
-    app.logger.debug(f"PLAYER MOVE GAMEOVER?: {gameover_text}")
+    gameover_text = chessboard.get_gameover_text(logger, stockfish_app, moves, True)
+    logger.debug(f"PLAYER MOVE GAMEOVER?: {gameover_text}")
     if gameover_text is not None:
-        app.logger.debug("PLAYER WIN!")
+        logger.debug("PLAYER WIN!")
         complete_game(game)
         return gameover_text
 
@@ -252,10 +231,10 @@ def move_ai_game(author, game, move_intent):
     moves = dao.get_moves_string(game)
 
     # Did AI Player Win?
-    gameover_text = chessboard.get_gameover_text(app.logger, stockfish_app, moves, False)
-    app.logger.debug(f"CPU MOVE GAMEOVER?: {gameover_text}")
+    gameover_text = chessboard.get_gameover_text(logger, stockfish_app, moves, False)
+    logger.debug(f"CPU MOVE GAMEOVER?: {gameover_text}")
     if gameover_text is not None:
-        app.logger.debug("CPU WIN!")
+        logger.debug("CPU WIN!")
         complete_game(game)
         return utils.relay_move_db(author, best_move) + '\n' + gameover_text
 
@@ -277,12 +256,12 @@ def move_pvp_game(mover, game, move_intent):
     moves += move_intent
 
     # did player win?
-    gameover_text = chessboard.get_gameover_text(app.logger, stockfish_app, moves, True)
-    app.logger.debug(f"PLAYER MOVE GAMEOVER?: {gameover_text}")
+    gameover_text = chessboard.get_gameover_text(logger, stockfish_app, moves, True)
+    logger.debug(f"PLAYER MOVE GAMEOVER?: {gameover_text}")
 
     if gameover_text is not None:
         # end game
-        app.logger.debug("PLAYER WIN!")
+        logger.debug("PLAYER WIN!")
         complete_game(game)
         return gameover_text
         
@@ -305,16 +284,16 @@ def get_game(mover, opponent, is_ai):
     return is_pvp, game
 
 def complete_game(game):
-    app.logger.debug(f'Game Has Been Completed and Thus Archived! ID:{game.id}')
+    logger.debug(f'Game Has Been Completed and Thus Archived! ID:{game.id}')
     if not dao.archive_game(game):
-        app.logger.error(f'Issue occurred when Archiving Game!')
+        logger.error(f'Issue occurred when Archiving Game!')
 
 def solo_claim_victory(moves, mover):
     return make_response(
         f'{utils.mention_db_player(mover)} is better than a rock with electricity...' +
         f'kudos to you with final board state:\n{chessboard.get_board_backquoted(stockfish_app, moves)}' +
         f'\nmoves: {moves}',
-        201
+        202
     )
 
 def ai_claim_victory(moves, mover):
@@ -322,7 +301,7 @@ def ai_claim_victory(moves, mover):
         f'{utils.mention_db_player(mover)} get rekt noob i win again KEKW ' +
         f'final board state:\n{chessboard.get_board_backquoted(stockfish_app, moves)}' +
         f'\nmoves: {moves}',
-        201
+        202
     )
 
 def pvp_claim_victory(moves, winner, loser):
@@ -331,8 +310,61 @@ def pvp_claim_victory(moves, winner, loser):
         f'{utils.mention_db_player(winner)} stands above you again, you plebe:\n' + 
         f'{chessboard.get_board_backquoted(stockfish_app, moves)}' + 
         f'\nmoves: {moves}',
-        201
+        202
     )
 
-if __name__ == '__main__':
-   app.run(debug = True)
+
+# Startup code
+CONFIG_PATH_DEST = "configPath"
+
+def command_line_parse(argv = sys.argv):
+    description = """Chess Move Restful API"""
+
+    argparser = argparse.ArgumentParser(description=description)
+    argparser.add_argument("--file", "--config", dest=CONFIG_PATH_DEST, default="./config.json", help = "File Path to Config File")
+    argparser.add_argument("--db", "--database", dest="db", help="SQL URI for accessing SQL database")
+    return vars(argparser.parse_args(argv))
+
+def create_app(args={}):
+    config = {}
+
+    # There is also config file loading that comes with json from flask's library
+    #   especially if you don't like this hacky code
+    data = {}
+    if CONFIG_PATH_DEST in args:
+        print(f"Loading config file from {args[CONFIG_PATH_DEST]}")
+        with open(args[CONFIG_PATH_DEST], 'r') as configFile:
+            data = json.load(configFile)
+
+    # From Config File
+    utils.safe_dict_copy_default(config, ['host'], data, ['api', 'host'], "0.0.0.0")
+    utils.safe_dict_copy_default(config, ['port'], data, ['api', 'port'], 8000)
+    utils.safe_dict_copy_default(config, ['stockfish-path'], data, ['api', 'stockfish', 'path'], '/usr/games/stockfish')
+    utils.safe_dict_copy_default(config, ['stockfish-depth'], data, ['api', 'stockfish', 'depth'], 15)
+    utils.safe_dict_copy_default(config, ['stockfish-params'], data, ['api', 'stockfish'], {})
+    utils.safe_dict_copy_default(config, ['flask'], data, ['api', 'flask'], {})
+    utils.safe_dict_copy(config, ['db'], data, ['api', 'db_uri'])
+
+    # From CLI Args
+    utils.safe_dict_copy_default(config, ['db'], args, ['db'], "sqlite:///storage.db")
+
+    dao.init(config['db'])
+    global stockfish_app
+    stockfish_app = Stockfish(path=config['stockfish-path'], depth=config['stockfish-depth'], parameters=config['stockfish-params'])
+
+    app = Flask(__name__)
+    app.config.update(config['flask'])
+    app.register_blueprint(root)
+
+    global logger
+    logger = app.logger
+    return app
+
+def main():
+    args = command_line_parse()
+    app = create_app(args)
+    app.run(debug = True)
+
+## TODO Needed a different project structure for unit testing. Is this still needed?
+if __name__ == "__main__":
+    main()
