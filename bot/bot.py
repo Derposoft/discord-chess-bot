@@ -8,7 +8,7 @@ description = """Discord Chess Bot is a simple application to play againt other 
 members or to play against the Stockfish AI. Use -h or --help for information about the bot."""
 
 argparser = argparse.ArgumentParser(description=description)
-argparser.add_argument("-f", "--file", "--config", dest="configPath", default="./config.json", help = "File Path to Config File")
+argparser.add_argument("--file", "--config", dest="configPath", default="./config.json", help = "File Path to Config File")
 argparser.add_argument("-u", "--host", dest="url", default="http://localhost:5000/", help="url for acessing discord bot rest api")
 argparser.add_argument("-l", "--log", dest="log", default="discord.log", help="output file path for debug logging!")
 argparser.add_argument("--quiet", "--no-log", dest="quiet", default=False, action="store_const", const=True, help="Disable logging from bot. Not recommended!")

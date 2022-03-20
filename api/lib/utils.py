@@ -1,3 +1,5 @@
+from flask import make_response
+
 # Takes two dictionaries and 2 lookups. Assigns the value if it exists otherwise assigns it to default
 def safe_dict_copy_default(recv, recvpath, send, sendpath, default):
     safe_dict_copy(recv, recvpath, send, sendpath, lambda: default)
@@ -81,3 +83,6 @@ def _relay_move(mover, move, mention_player_lambda):
 
 def is_white_move(author_id, is_author_white, mover_id):
     return (author_id == mover_id) == is_author_white
+
+def respond(body, status):
+    return make_response((body, status))

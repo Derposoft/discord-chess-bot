@@ -1,6 +1,7 @@
 from .db.database import GameArchive, init as init_db
 from .db.database import db_session, GameLegacy,\
     Participant, Game, Move
+from sqlalchemy import or_
 
 from .constants import STOCKFISH_INVITEE_ID
 
@@ -11,11 +12,14 @@ def get_participant(discordID):
     # discordID could either be the discord user ID or 
     # the GuildMemberID
     db = db_session()
-    _get_participant_with_session(db, discordID)
+    return _get_participant_with_session(db, discordID)
 
 def _get_participant_with_session(db, discordID):
     return db.query(Participant).\
-        filter(Participant.discord_user_id == discordID or Participant.discord_guild_id == discordID).\
+        filter(or_(
+            Participant.discord_user_id == discordID,
+            Participant.discord_guild_id == discordID
+        )).\
         order_by(Participant.id.desc()).\
         first()
 
@@ -49,43 +53,46 @@ def update_participant(user_id, guild_id):
 def get_recent_game(participant):
     db = db_session()
     return db.query(Game).\
-        filter(Game.author_id == participant.id or Game.invitee_id == participant.id).\
+        filter(or_(
+            Game.author_id == participant.id,
+            Game.invitee_id == participant.id
+        )).\
         order_by(Game.id.desc()).\
         first()
 
 def get_solo_game(participant):
     db = db_session()
     return db.query(Game).\
-        filter_by(participant_id=participant.id).\
+        filter_by(author_id=participant.id).\
         filter_by(invitee_id=STOCKFISH_INVITEE_ID).\
         first()
 
 def get_pvp_game(participant, invitee):
     db = db_session()
     return db.query(Game).\
-        filter_by(participant_id=participant.id).\
+        filter_by(author_id=participant.id).\
         filter_by(invitee_id=invitee.id).\
         first()
 
 def get_moves_string(game):
     db = db_session()
-    _get_moves_string_with_session(db, game)
+    return _get_moves_string_with_session(db, game)
 
 def _get_moves_string_with_session(db, game):
-    moves = db.query(Move).\
+    move_rows = db.query(Move).\
             filter_by(game_id=game.id).\
             all()
 
     builder = ""
-    for move in moves:
-        builder += move
+    for move_row in move_rows:
+        builder += move_row.move
     
     return builder
 
-def create_solo_game(participant, elo, player_is_white):
+def create_solo_game(author, elo, player_is_white):
     db = db_session()
     try:
-        game = Game(participant_id = participant.id, invitee_id = STOCKFISH_INVITEE_ID, stockfish_elo = elo, author_is_white = player_is_white)
+        game = Game(author_id = author.id, invitee_id = STOCKFISH_INVITEE_ID, stockfish_elo = elo, author_is_white = player_is_white)
         db.add(game)
         db.commit()
         return True
