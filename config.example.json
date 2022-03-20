@@ -6,7 +6,9 @@
     "api": {
         "host": "0.0.0.0",
         "port": 8000,
-        "stockfish": "path_to_stockfish"
+        "stockfish": {
+            "path": "path_to_stockfish"
+        }
     },
 
     "bot": {

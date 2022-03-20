@@ -1,45 +1,46 @@
 import chess
 
-def _separate(moves):
-    return [move for move in moves.split(' ') if move != '']
+# BUG Using Internal State on an object without a resource pool (Data Race)
+# This module should make use of a synchronous message broker system (RabbitMQ)
+# to make sure one thread is uing stockfish at a time
+
+def _set_board_to(stockfish, moves):
+    stockfish.set_position(
+        [move for move in moves.split(' ') if move != '']
+    )
 
 def check_move(stockfish, moves, move):
-    stockfish.set_position(_separate(moves))
+    _set_board_to(stockfish, moves)
     return stockfish.is_move_correct(move)
 
 def engine_move(stockfish, moves, elo):
     stockfish.set_elo_rating(elo)
-    stockfish.set_position(_separate(moves))
+    _set_board_to(stockfish, moves)
     best = stockfish.get_best_move()
     return best
 
-def relay_move(move, args):
-    return ('I play ' + move + mention(args) + '.' if move != None else '')
-
-def claim_victory(stockfish, moves, args):
-    stockfish.set_position(_separate(moves))
-    return mention(args) + 'get rekt noob i win again KEKW final board state:\n' + '```' + stockfish.get_board_visual() + '```' + '\nmoves: ' + moves
-
-def pvp_claim_victory(stockfish, moves, args):
-    stockfish.set_position(_separate(moves))
-    return f'{mention(args)} lmao {mention_player(args["opponent"])} stands above you again, you plebe:\n' + '```' + stockfish.get_board_visual() + '```' + '\nmoves: ' + moves
-
-def cheat_board(stockfish, moves):
-    print('moves', moves)
-    stockfish.set_position(_separate(moves))
+def cheat_board(log, stockfish, moves):
+    log.debug(f'moves {moves}')
+    _set_board_to(stockfish, moves)
     board = stockfish.get_board_visual()
     eval = stockfish.get_evaluation()
     best = stockfish.get_best_move()
     return '```' + board + '```', str(eval), best
 
-def get_gameover_text(stockfish, moves, player_just_moved):
-    print(moves, player_just_moved)
-    stockfish.set_position(_separate(moves))
-    board_visual = '```' + stockfish.get_board_visual() + '```'
+def get_board(stockfish, moves):
+    _set_board_to(stockfish, moves)
+    return stockfish.get_board_visual()
+
+def get_board_backquoted(stockfish, moves):
+    return f'```{get_board(stockfish, moves)}```'
+
+def get_gameover_text(log, stockfish, moves, player_just_moved):
+    log.debug(f'{moves} {player_just_moved}')
+    board_visual = get_board_backquoted(stockfish, moves)
     finish_text = board_visual + '\nfull game: ' + moves
     fen = stockfish.get_fen_position()
     board = chess.Board(fen)
-    print(board.outcome())
+    log.debug(f'{board.outcome}')
     # check for different game over scenarios
     if board.is_stalemate():
         return 'game is draw by stalemate. sadge. final board:\n' + finish_text
@@ -56,4 +57,5 @@ def get_gameover_text(stockfish, moves, player_just_moved):
             return 'i win POG game over, well played ((hard kap)). final board:\n' + finish_text
     elif board.outcome() != None:
         return 'game is over by unknown glitch (jk it\'s a chess rule but i haven\'t coded it in :\n' + finish_text
-    return ''
+
+    return None

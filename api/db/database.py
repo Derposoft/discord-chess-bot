@@ -3,7 +3,7 @@ from sqlalchemy.sql import func as sqlfunc
 from sqlalchemy.sql import text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, String, Integer, Boolean, TIMESTAMP, ForeignKeyConstraint, UniqueConstraint, CheckConstraint
+from sqlalchemy import Column, String, Integer, Boolean, TIMESTAMP, ForeignKeyConstraint, UniqueConstraint, CheckConstraint, Text
 
 Base = declarative_base()
 Session = None
@@ -46,46 +46,37 @@ class Participant(Base):
     dicord_guild_id=Column(String, unique=True)
     last_updated = Column(TIMESTAMP, nullable=False, server_default=sqlfunc.current_timestamp(), server_onupdate=text(f' ON UPDATE {sqlfunc.current_timestamp()}'))
 
-class StockfishGame(Base):
-    __tablename__ = 'stockfish_game'
-
-    id=Column(Integer, primary_key=True, autoincrement=True)
-    participant_id = Column(Integer, nullable=False, unique=True)
-    stockfish_elo = Column(Integer)
-    player_is_white = Column(Boolean, nullable=False)
-    finished = Column(Boolean, nullable=False, default=False, index=True)
-    last_updated=Column(TIMESTAMP, nullable=False, server_default=sqlfunc.current_timestamp(), server_onupdate=text(f' ON UPDATE {sqlfunc.current_timestamp()}'))
-    ForeignKeyConstraint(['participant_id'], ['Participant.id'], name='FK_Participant_Stockfish')
-
-class StockfishMoves(Base):
-    __tablename__ = 'stockfish_moves'
-
-    id=Column(Integer, primary_key=True, autoincrement=True)
-    game_id=Column(Integer)
-    move=Column(String, nullable=False)
-    white_move=Column(Boolean, nullable=False)
-    ForeignKeyConstraint(['game_id'], ['StockfishGame.id'], name='FK_MOVE_STOCKFISH')
-
 # BUG One could create 2 games per duo by inviting eachother to their own game
-class CompetitiveGame(Base):
-    __tablename__ = 'pvp_game'
+class Game(Base):
+    __tablename__ = 'chess_game'
 
     id=Column(Integer, primary_key=True, autoincrement=True)
     author_id = Column(Integer, nullable=False, index=True)
-    invitee_id = Column(Integer, nullable=False, index=True)
+    invitee_id = Column(Integer, nullable=False, index=True) # -1 for stockfish games
+    stockfish_elo = Column(Integer) # NULL for competetive Games
     author_is_white = Column(Boolean, nullable=False)
-    finished = Column(Boolean, nullable=False, default=False, index=True)
     last_updated = Column(TIMESTAMP, nullable=False, server_default=sqlfunc.current_timestamp(), server_onupdate=text(f' ON UPDATE {sqlfunc.current_timestamp()}'))
     ForeignKeyConstraint(['author_id'], ['Participant.id'], name='FK_AUTHOR_PVP')
-    ForeignKeyConstraint(['invitee_id'], ['Participant.id'], name='FK_INVITEE_PVP')
     UniqueConstraint('author_id', 'invitee_id', name='UK_AUTHOR_INVITEE')
     CheckConstraint('author_id <> invitee_id', name='CHCK_NO_SELF')
 
-class CompetitiveMoves(Base):
-    __tablename__ = 'pvp_moves'
+# Create a table with no constraints to move the game once complete
+class GameArchive(Base):
+    __tablename__ = 'chess_game_archive'
+
+    id=Column(Integer, primary_key=True, autoincrement=True)
+    author_id = Column(Integer, nullable=False, index=True)
+    invitee_id = Column(Integer, nullable=False, index=True) # -1 for stockfish games
+    stockfish_elo = Column(Integer) # NULL for competetive Games
+    author_is_white = Column(Boolean, nullable=False)
+    moves=Column(Text, nullable=False)
+    last_updated = Column(TIMESTAMP, nullable=False, server_default=sqlfunc.current_timestamp(), server_onupdate=text(f' ON UPDATE {sqlfunc.current_timestamp()}'))
+
+class Move(Base):
+    __tablename__ = 'chess_game_moves'
 
     id=Column(Integer, primary_key=True, autoincrement=True)
     game_id=Column(Integer)
     move=Column(String, nullable=False)
     white_move=Column(Boolean, nullable=False)
-    ForeignKeyConstraint(['game_id'], ['CompetitiveGame.id'], name='FK_MOVE_PVP')
+    ForeignKeyConstraint(['game_id'], ['Game.id'], name='FK_MOVE_GAME', ondelete="CASCASE")

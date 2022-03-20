@@ -1,6 +1,8 @@
+from constants import BLACK, WHITE
+
 def validate_new_game(is_pvp, side, author, invitee):
-    if side != 'white' and side != 'black':
-        return 'you can only be \'white\' or \'black\' because this is chess OMEGALUL'
+    if side != WHITE and side != BLACK:
+        return f'you can only be {WHITE} or {BLACK} because this is chess OMEGALUL'
     elif author is None:
         return 'A unique ID for the author must be provided!'
     elif is_pvp and invitee is None:

@@ -7,6 +7,7 @@ import chessboard
 import dao
 import utils
 import validation
+from constants import BLACK, WHITE, STOCKFISH_INVITEE_ID
 
 
 ### Get Command Line Arguments and configuration
@@ -28,15 +29,14 @@ with open(args.configPath, 'r') as configFile:
     data = json.load(configFile)
     utils.safe_dict_copy_default(config, ['host'], data, ['api', 'host'], "0.0.0.0")
     utils.safe_dict_copy_default(config, ['port'], data, ['api', 'port'], 8000)
-    utils.safe_dict_copy_default(config, ['stockfish'], data, ['api', 'stockfish'], '/usr/games/stockfish')
+    utils.safe_dict_copy_default(config, ['stockfish-path'], data, ['api', 'stockfish', 'path'], '/usr/games/stockfish')
+    utils.safe_dict_copy_default(config, ['stockfish-depth'], data, ['api', 'stockfish', 'depth'], 15)
+    utils.safe_dict_copy_default(config, ['stockfish-params'], data, ['api', 'stockfish'], {})
 
 dao.init(config['db'])
-stockfish_app = Stockfish(config['stockfish'])
+stockfish_app = Stockfish(path=config['stockfish-path'], depth=config['stockfish-depth'], parameters=config['stockfish-params'])
 
 app = Flask(__name__)
-
-WHITE = 'white'
-BLACK = 'black'
 
 @app.route('/signup', methods = ['POST'])
 def create_user():
@@ -57,15 +57,38 @@ def create_user():
     
     return make_response(f'UWU I couldn\'t make that for you sir >.<', 500)
 
-# TODO Create an UPDATE user Method
+@app.route('/change-user', methods = ['POST'])
+def update_user():
+    args = utils.parse_args(request)
+    user_id = utils.get_first_valid_index(args, ['user'])
+    guild_id = utils.get_first_valid_index(args, ['guild'])
+
+    if dao.get_participant(user_id) == None:
+        return make_response(f'That user doesn\'t exist pleb >:O', 401)
+    
+    if dao.update_participant(user_id, guild_id):
+        return make_response(f'Update Done!', 201)
+    
+    return make_response(f'OH NO... WHY COULDN\'T I MAKE AN UPDATE ._.', 500)
+
+@app.route('/get-user', methods = ['GET'])
+def get_user():
+    args = utils.parse_args(request)
+    user_id = utils.get_first_valid_index(args, ['user'])
+
+    user = dao.get_participant(user_id)
+    if user == None:
+        return make_response(f'That user doesn\'t exist pleb >:O', 401)
+    
+    return make_response(f'{user.id}', 200)
 
 # creates a new game for the player
-@app.route('/new/ai', methods = ['POST'])
+@app.route('/new-game/ai', methods = ['POST'])
 def new_stockfish():
     args = utils.parse_args(request)
-    side = args['side']
     author = utils.get_first_valid_index(args, ['author'])
     elo = utils.get_first_valid_index(args, ['elo'])
+    side = utils.get_first_valid_index(args, ['side'])
 
     validation_resp = validation.validate_new_game(False, side, author, None)
     if validation_resp is not None:
@@ -78,26 +101,26 @@ def new_stockfish():
     if participant is None:
         return make_response(f'Participant Does Not Exist!', 422)
 
-    curr_game = dao.check_in_solo(participant)
+    curr_game = dao.get_solo_game(participant)
     if curr_game != None:
-        return make_response(f'bruh ur in a gam rn i will only ple 1 game with u at a time {utils.mention(args)}', 401)
+        return make_response(f'bruh ur in a gam rn i will only ple 1 game with u at a time {utils.mention_player(author)}', 401)
     
+    move = None
     player_is_white = side == WHITE
-    dao.create_stockfish_game(participant, elo, player_is_white)
+    dao.create_solo_game(participant, elo, player_is_white)
     if not player_is_white:
-        #TODO
-        # make a move and game to db if player is black and vs CPU
         move = chessboard.engine_move(stockfish_app, '', args['elo'])
+        dao.add_move_to_game(curr_game, move, True)
 
-    return make_response(f'New game successfully started for {utils.mention(author)}. {utils.relay_move(move, args)}', 200)
+    return make_response(f'New game successfully started for {utils.mention_player(author)}. {utils.relay_move(author, move)}', 200)
 
 
-@app.route('/new/pvp', methods = ['POST'])    
+@app.route('/new-game/pvp', methods = ['POST'])    
 def new():
     args = utils.parse_args(request)
-    side = args['side']
     author = utils.get_first_valid_index(args, ['author'])
     invitee = utils.get_first_valid_index(args, ['invitee'])
+    side = utils.get_first_valid_index(args, ['side'])
 
     validation_resp = validation.validate_new_game(True, side, author, invitee)
     if validation_resp is not None:
@@ -113,12 +136,12 @@ def new():
         return make_response(f'Author Participant Does Not Exist!', 430)
 
     app.logger.debug(f'Attempting Creation for pvp game {author} and {invitee}')
-    curr_game = dao.check_in_pvp(author, invitee)
+    curr_game = dao.get_pvp_game(author, invitee)
     if curr_game != None:
         return make_response(f'bruhh you can only ple 1 game with a given person at once {utils.mention_player(author)}', 401)
     
-    author_is_white=side == WHITE
-    dao.create_competitive_game(author_p, invitee_p, author_is_white)
+    author_is_white = side == WHITE
+    dao.create_pvp_game(author_p, invitee_p, author_is_white)
     return f'New game successfully started between {utils.mention_player(author)} and {utils.mention_player(invitee)}.'
 
 # make a move for the player
@@ -127,86 +150,25 @@ def move():
     args = utils.parse_args(request)
     mover = utils.get_first_valid_index(args, ['self'])
     opponent = utils.get_first_valid_index(args, ['opponent'])
+    is_ai = utils.get_first_valid_index(args, ['ai'])
     move_intent = utils.get_first_valid_index(args, ['move'])
     
-    if opponent is None:
-        return move_most_recent(args, mover, move_intent)
-    elif opponent == "!":
-        return move_ai(args, mover, move_intent)
+    mover_p = dao.get_participant(mover)
+    if mover_p is None:
+        return make_response(f'bruh is this your first time {utils.mention_player(mover)}?', 400)
+    
+    opponent_p = None
+    if opponent is not None:
+        opponent_p = dao.get_participant(opponent)
+        if opponent_p is None:
+            return make_response(f'Cool you wanna play with {utils.mention_player(opponent)}... but idk who they are.', 400)
+    
+    is_pvp, game = get_game(mover_p, opponent_p, is_ai)
+
+    if is_pvp:
+        return move_pvp_game(mover_p, game, move_intent)
     else:
-        return move_pvp(args, mover, opponent, move_intent)
-
-def move_most_recent(args, mover, move_intent):
-    pass
-
-def move_ai(args, mover, move_intent):
-    # check to make sure player is in a game
-    game = dao.check_in_solo(mover)
-
-    if game is None:
-        # pvp_addon = f' with {utils.mention_player(args["opponent"])}' if is_pvp else ''
-        return f'bruh ur not in a solo game rn {utils.mention(args)}'
-    
-    if not chessboard.check_move(stockfish_app, game, move_intent):
-        return f'u can\'t play that lol {utils.mention(args)}'
-    
-    best = chessboard.engine_move(stockfish_app, game)
-
-    # did player win?
-    gameover_text = utils.get_gameover_text(stockfish_app, game)
-    app.logger.debug(f"PLAYER MOVE GAMEOVER?: {gameover_text}")
-
-    if gameover_text is not None:
-        # end game
-        app.logger.debug("PLAYER WIN!")
-        utils.complete_game(game)
-        return gameover_text
-
-    gameover_text = chessboard.get_gameover_text(stockfish_app, game)
-    app.logger.debug(f"CPU MOVE GAMEOVER?: {gameover_text}")
-    if gameover_text != '':
-        # end game
-        app.logger.debug("CPU WIN!")
-        utils.complete_game(game)
-        return utils.relay_move(best, args) + '\n' + gameover_text
-
-    return utils.relay_move(best, args)
-
-
-def move_pvp(args, mover, opponent, move_intent):
-    game = utils.check_in_pvp(mover, opponent)
-
-    if game is None:
-        # pvp_addon = f'  ''
-        result = f'bruh ur not in a solo game rn {utils.mention(args)}'
-        + f'with {utils.mention_player(args["opponent"])}'
-        
-        return result
-
-    if not utils.check_movers_turn(game, mover):
-        return f'it not ur turn lol?? {utils.mention(args)}'
-    
-    # load the game in stockfish and verify that the move is legal
-    if not chessboard.check_move(stockfish_app, game, move_intent):
-        return f'u can\'t play that lol {utils.mention(args)}'
-
-    # if move is legal, add the move (and switch player turn if pvp)
-    if not utils.make_move(game, mover, move_intent):
-        return f'Something Went Wrong in Making that Move (Are u hecking bro?)'
-    
-    # did player win?
-    gameover_text = chessboard.get_gameover_text(stockfish_app, game)
-    app.logger.debug(f"PLAYER MOVE GAMEOVER?: {gameover_text}")
-
-    if gameover_text is not None:
-        # end game
-        app.logger.debug("PLAYER WIN!")
-        utils.complete_game(game)
-        return gameover_text
-        
-    # did engine/person win?
-    return f'ur move has been made good job pogO {utils.mention(args)}'
-    
+        return move_ai_game(mover_p, game, move_intent)
 
 # accept the player's resignation
 @app.route('/ff',methods = ['POST', 'GET'])
@@ -214,19 +176,34 @@ def ff():
     args = utils.parse_args(request)
     mover = utils.get_first_valid_index(args, ['self'])
     opponent = utils.get_first_valid_index(args, ['opponent'])
+    is_pvp = opponent is not None
 
-    is_pvp, game = get_game(db, args, mover, opponent)
+    mover_p = dao.get_participant(mover)
+    if mover_p is None:
+        return make_response(f'Maaaaaan, I donut even know u bruv {utils.mention_player(mover)}?', 400)
+
+    game = None
+    if is_pvp:
+        opponent_p = dao.get_participant(opponent)
+        if opponent_p is None:
+            return make_response(f'You have a game \'gainst them? sure?', 400)
+
+        game = dao.get_pvp_game(mover_p, opponent_p)
+    else:
+        game = dao.get_solo_game(mover_p)
 
     if game == None:
-        return 'bruh don\'t know what game you speak of' + utils.mention(mover)
+        return 'bruh don\'t know what game you speak of' + utils.mention_player(mover)
+
+    moves = dao.get_moves_string(game)
 
     # resign the player and claim victory
-    utils.complete_game(game)
+    complete_game(game)
 
     if is_pvp:
-        return chessboard.claim_victory(stockfish_app, game)
+        return pvp_claim_victory(moves, mover_p, opponent_p)
     else:
-        return chessboard.claim_victory(stockfish_app, game)
+        return ai_claim_victory(moves, mover_p)
 
 # allow the player to cheat
 @app.route('/cheat',methods = ['POST', 'GET'])
@@ -234,30 +211,128 @@ def cheat():
     args = utils.parse_args(request)
     mover = utils.get_first_valid_index(args, ['self'])
     opponent = utils.get_first_valid_index(args, ['opponent'])
+    is_ai = utils.get_first_valid_index(args, ['ai'])
 
-    _, game = get_game(db, args, mover, opponent)
+    mover_p = dao.get_participant(mover)
+    opponent_p = dao.get_participant(opponent)
+    game = get_game(mover_p, opponent_p, is_ai)
 
     if game == None:
-        return 'bruh don\'t know what game you speak of' + utils.mention(mover)
+        return make_response(f'bruh don\'t know what game you speak of {utils.mention_player(mover)}', 400)
 
     # return cheats
     board, eval, best = chessboard.cheat_board(stockfish_app, game)
 
-    return board + '\n' + eval + '\n' + best + '\n' + 'that good enough for you? stupid cheater' + utils.mention(args)
+    return make_response(f'{board}\n{eval}\n{best}\nthat good enough for you? stupid cheater {utils.mention_player(mover)}', 200)
 
-def get_game(db, args, mover, opponent):
+
+# TODO Make a file (seperate from utils) which accesses the database and is usable by the api
+def move_ai_game(author, game, move_intent):
+    moves = dao.get_moves_string(game)
+
+    if not chessboard.check_move(stockfish_app, moves, move_intent):
+        return make_response(f'u can\'t play that lol {utils.mention_db_player(author)}', 400)
+
+    if not dao.add_move_to_game(game, move_intent, game.author_is_white):
+        return make_response(f'Couldn\'t make that move in the DB Senpai!', 500)
+        
+    moves += move_intent
+
+    # did player win?
+    gameover_text = chessboard.get_gameover_text(app.logger, stockfish_app, moves, True)
+    app.logger.debug(f"PLAYER MOVE GAMEOVER?: {gameover_text}")
+    if gameover_text is not None:
+        app.logger.debug("PLAYER WIN!")
+        complete_game(game)
+        return gameover_text
+
+    # AI Player Takes Turn
+    best_move = chessboard.engine_move(stockfish_app, game)
+    dao.add_move_to_game(game, best_move, not game.author_is_white)
+    moves = dao.get_moves_string(game)
+
+    # Did AI Player Win?
+    gameover_text = chessboard.get_gameover_text(app.logger, stockfish_app, moves, False)
+    app.logger.debug(f"CPU MOVE GAMEOVER?: {gameover_text}")
+    if gameover_text is not None:
+        app.logger.debug("CPU WIN!")
+        complete_game(game)
+        return utils.relay_move_db(author, best_move) + '\n' + gameover_text
+
+    return utils.relay_move_db(author, best_move)
+
+def move_pvp_game(mover, game, move_intent):
+    if not dao.check_users_turn(game, mover):
+        return f'it not ur turn lol?? {utils.mention_db_player(mover)}'
+    
+    moves = dao.get_moves_string(game)
+
+    # load the game in stockfish and verify that the move is legal
+    if not chessboard.check_move(stockfish_app, moves, move_intent):
+        return f'u can\'t play that lol {utils.mention_db_player(mover)}'
+
+    if not dao.add_move_to_game(game, move_intent, utils.is_white_move(game.author_id, game.is_author_white, mover.id)):
+        return make_response(f'Something Went Wrong in Making that Move (Are u hecking bro?)', 500)
+
+    moves += move_intent
+
+    # did player win?
+    gameover_text = chessboard.get_gameover_text(app.logger, stockfish_app, moves, True)
+    app.logger.debug(f"PLAYER MOVE GAMEOVER?: {gameover_text}")
+
+    if gameover_text is not None:
+        # end game
+        app.logger.debug("PLAYER WIN!")
+        complete_game(game)
+        return gameover_text
+        
+    # did engine/person win?
+    return f'ur move has been made good job pogO {utils.mention_db_player(mover)}'
+
+def get_game(mover, opponent, is_ai):
     is_pvp = False
     game = None
-    if opponent is None:
-        game, is_pvp = utils.get_most_recent_game(db, args, mover)
-    elif opponent == "!":
-        is_pvp = True
-        game = utils.get_ai_game(db, args, mover)
-    else:
+    if opponent is None and not is_ai:
+        game = dao.get_recent_game(mover)
+        is_pvp = game.invitee_id == STOCKFISH_INVITEE_ID
+    elif opponent is None:
         is_pvp = False
-        game = utils.get_pvp_game(db, args, mover)
+        game = dao.get_solo_game(mover)
+    else:
+        is_pvp = True
+        game = dao.get_pvp_game(mover, opponent)
     
     return is_pvp, game
+
+def complete_game(game):
+    app.logger.debug(f'Game Has Been Completed and Thus Archived! ID:{game.id}')
+    if not dao.archive_game(game):
+        app.logger.error(f'Issue occurred when Archiving Game!')
+
+def solo_claim_victory(moves, mover):
+    return make_response(
+        f'{utils.mention_db_player(mover)} is better than a rock with electricity...' +
+        f'kudos to you with final board state:\n{chessboard.get_board_backquoted(stockfish_app, moves)}' +
+        f'\nmoves: {moves}',
+        201
+    )
+
+def ai_claim_victory(moves, mover):
+    return make_response(
+        f'{utils.mention_db_player(mover)} get rekt noob i win again KEKW ' +
+        f'final board state:\n{chessboard.get_board_backquoted(stockfish_app, moves)}' +
+        f'\nmoves: {moves}',
+        201
+    )
+
+def pvp_claim_victory(moves, winner, loser):
+    return make_response(
+        f'{utils.mention_db_player(loser)} lmao ' +
+        f'{utils.mention_db_player(winner)} stands above you again, you plebe:\n' + 
+        f'{chessboard.get_board_backquoted(stockfish_app, moves)}' + 
+        f'\nmoves: {moves}',
+        201
+    )
 
 if __name__ == '__main__':
    app.run(debug = True)

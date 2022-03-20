@@ -61,9 +61,23 @@ def get_first_valid_index(dict, indexes):
 def parse_args(request):
     return request.args
 
-def mention(args): # legacy method -- use mention_player and delet this
-    return mention_player(args['uid'])
+def mention_db_player(player):
+    if player.discord_user_id != None:
+        return mention_player(player.discord_user_id)
+    else:
+        return mention_player(player.discord_guild_id)
 
 def mention_player(player_uid):
     return f'<@!{player_uid}>'
 
+def relay_move(mover, move):
+    return _relay_move(mover, move, mention_player)
+
+def relay_move_db(mover, move):
+    return _relay_move(mover, move, mention_db_player)
+
+def _relay_move(mover, move, mention_player_lambda):
+    return ('I play ' + move + mention_player_lambda(mover) + '.' if move != None else '')
+
+def is_white_move(author_id, is_author_white, mover_id):
+    return (author_id == mover_id) == is_author_white
