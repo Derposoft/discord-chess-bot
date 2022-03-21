@@ -57,7 +57,7 @@ def get_recent_game(participant):
             Game.author_id == participant.id,
             Game.invitee_id == participant.id
         )).\
-        order_by(Game.id.desc()).\
+        order_by(Game.last_updated.desc()).\
         first()
 
 def get_solo_game(participant):
