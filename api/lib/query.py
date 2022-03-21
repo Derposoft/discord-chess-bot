@@ -1,6 +1,5 @@
 from .db.database import GameArchive, init as init_db
-from .db.database import db_session, GameLegacy,\
-    Participant, Game, Move
+from .db.database import db_session, Participant, Game, Move
 from sqlalchemy import or_
 
 from .constants import STOCKFISH_INVITEE_ID
