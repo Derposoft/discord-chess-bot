@@ -9,8 +9,8 @@ Base = declarative_base()
 Session = None
 
 def init(dbURI):
-    # I don't think Engine should be garbage collected since we
-    #    bind it to Session. Engine should still have a refer
+    # I don't think Engine will be garbage collected since we
+    #    bind it to Session. Engine should still have a reference
     engine = create_engine(
         dbURI,
         echo=True,
@@ -27,16 +27,6 @@ def db_session():
         raise RuntimeError("DB Session Was never initialized!")
 
     return Session()
-
-## DEPRECATED
-class GameLegacy(Base):
-    __tablename__ = 'games'
-
-    # BUG primary keys are automatically unique in most type of SQL.
-    uid = Column(String, primary_key=True, unique=True)
-    moves = Column(String)
-    stockfish_elo = Column(Integer)
-    player_side = Column(String)
 
 class Participant(Base):
     __tablename__ = 'participant'

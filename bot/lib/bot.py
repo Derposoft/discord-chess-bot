@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import json, requests, sys, argparse, logging
-import dummylog, utils
+from . import dummylog, utils
 
 ### Get Command Line Arguments and configuration
 description = """Discord Chess Bot is a simple application to play againt other server
@@ -48,29 +48,39 @@ intents = discord.Intents.default()
 intents.members = True
 bot = commands.Bot(command_prefix=config['prefix'], description=config['botDesc'], intents=intents)
 
+userID = None
 
 ### Bot Events and Commands
 
 @bot.event
 async def on_ready():
-    print(f'logged on as {bot.user.name}{bot.user.id}!')
+    global userID
+    userID = bot.user.id
+    logger.debug(f'logged on as {bot.user.name}{userID}!')
 
-# BUG Users can create games with the bot rather than with the computer. Bot may need to filter
-# and respond with a catchy phrase
 @bot.command()
 async def new(ctx, side: str, eloOrMention: str = '1500'):
     """starts a new chess game VS CPU/human for the current user given an option of side: b, w, or r (random)."""
 
     logger.debug(f'Game Created By {ctx.author.id} with side {side} and elo {eloOrMention}')
 
+    if userID != None and eloOrMention == userID:
+        logger.debug(f'User tried to start a game with the bot... how naieve!')
+        await ctx.send('Thanks, but I am too busy to play right now!')
+        return
+
     if utils.is_elo(eloOrMention):
         logger.debug(f'Creating Solo Game!')
-        info = requests.get(config['url'] + 'new?side=' + side.lstrip().rstrip() 
-            + '&elo=' + eloOrMention + '&' + utils.user_info(ctx))
+        info = requests.get(f'{config["url"]}new-game/ai?'
+            + f'side={side.lstrip().rstrip()}'
+            + f'&elo={eloOrMention}'
+            + f'&author={utils.user_info(ctx)}')
     else:
         logger.debug(f'Creating 2 Player Game!')
-        info = requests.get(config['url'] + 'new?side=' + side.lstrip().rstrip() 
-            + '&challengee=' + utils.mention_parser(eloOrMention) + '&challenger=' + str(ctx.author.id))
+        info = requests.get(f'{config["url"]}new-game/pvp?' 
+            + f'side={side.lstrip().rstrip()}' 
+            + f'&invitee={utils.mention_parser(eloOrMention)}'
+            + f'&author={utils.user_info(ctx)}')
     await ctx.send(info.text)
 
 @bot.command()
@@ -78,7 +88,20 @@ async def move(ctx, move: str, player: str = ''):
     """makes a move in a currently running game. add an @mention at end for a pvp game."""
 
     logger.debug(f'Move made by {ctx.author.id} with move {move} against player \'{player}\'')
-    info = requests.get(f'{config["url"]}move?move={move}&{utils.user_info(ctx)}{utils.pvpstring(player)}')
+    
+    ai_query_arg = ''
+    opponent_query_arg = ''
+    if player != '' and player != '!':
+        opponent_query_arg = f'&opponent={utils.pvpstring(player)}'
+    elif player == '!':
+        ai_query_arg = '&ai=true'
+
+    info = requests.get(f'{config["url"]}move?'
+        + f'move={move}'
+        + f'&self={utils.user_info(ctx)}'
+        + opponent_query_arg
+        + ai_query_arg)
+
     await ctx.send(info.text)
 
 @bot.command()
@@ -86,7 +109,18 @@ async def ff(ctx, player: str = ''):
     """resign the currently running game"""
 
     logger.debug(f'Forfeit yielded by {ctx.author.id} against player \'{player}\'')
-    info = requests.get(f'{config["url"]}ff?{utils.user_info(ctx)}{utils.pvpstring(player)}')
+
+    ai_query_arg = ''
+    opponent_query_arg = ''
+    if player != '' and player != '!':
+        opponent_query_arg = f'&opponent={utils.pvpstring(player)}'
+    elif player == '!':
+        ai_query_arg = '&ai=true'
+
+    info = requests.get(f'{config["url"]}move?'
+        + f'self={utils.user_info(ctx)}'
+        + opponent_query_arg
+        + ai_query_arg)
     await ctx.send(info.text)
 
 @bot.command()
@@ -94,7 +128,18 @@ async def cheat(ctx, player: str = ''):
     """allow the user to cheat by providing a boardstate and an evaluation. add an @mention at the end for a pvp game"""
 
     logger.debug(f'Cheat used by {ctx.author.id} against player \'{player}\'')
-    info = requests.get(f'{config["url"]}cheat?{utils.user_info(ctx)}{utils.pvpstring(player)}')
+
+    ai_query_arg = ''
+    opponent_query_arg = ''
+    if player != '' and player != '!':
+        opponent_query_arg = f'&opponent={utils.pvpstring(player)}'
+    elif player == '!':
+        ai_query_arg = '&ai=true'
+
+    info = requests.get(f'{config["url"]}cheat?'
+        + f'self={utils.user_info(ctx)}'
+        + opponent_query_arg
+        + ai_query_arg)
     await ctx.send(info.text)
 
 ### Run the Bot Event Loop (infinite loop)

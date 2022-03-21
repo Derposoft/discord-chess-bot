@@ -49,7 +49,7 @@ def safe_dict_copy(recv, recvpath, send, sendpath, supplier=lambda: None):
 
 # returns user info
 def user_info(ctx):
-    return 'uid=' + str(ctx.author.id) #+ '&name=' + ctx.author.name
+    return str(ctx.author.id)
 
 # parse @mentions
 def mention_parser(user):
