@@ -45,7 +45,7 @@ class Game(Base):
     invitee_id = Column(Integer, nullable=False, index=True) # -1 for stockfish games
     stockfish_elo = Column(Integer) # NULL for competetive Games
     author_is_white = Column(Boolean, nullable=False)
-    last_updated = Column(TIMESTAMP, nullable=False, server_default=sqlfunc.current_timestamp(), server_onupdate=text(f' ON UPDATE {sqlfunc.current_timestamp()}'))
+    last_updated = Column(TIMESTAMP, nullable=False, index=True, server_default=sqlfunc.current_timestamp(), server_onupdate=text(f' ON UPDATE {sqlfunc.current_timestamp()}'))
     ForeignKeyConstraint(['author_id'], ['Participant.id'], name='FK_AUTHOR_PVP')
     UniqueConstraint('author_id', 'invitee_id', name='UK_AUTHOR_INVITEE')
     CheckConstraint('author_id <> invitee_id', name='CHCK_NO_SELF')

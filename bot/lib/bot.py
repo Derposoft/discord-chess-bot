@@ -59,6 +59,16 @@ async def on_ready():
     logger.debug(f'logged on as {bot.user.name}{userID}!')
 
 @bot.command()
+async def signup(ctx):
+    """Mostly for Debugging. Signs up a user to the platform (memorizes the user and guild ids)"""
+
+    logger.debug(f'Signing up User!')
+    info = requests.post(f'{config["url"]}signup?' 
+        + f'user={ctx.author.id}')
+    await ctx.send(info.text)
+
+
+@bot.command()
 async def new(ctx, side: str, eloOrMention: str = '1500'):
     """starts a new chess game VS CPU/human for the current user given an option of side: b, w, or r (random)."""
 
@@ -71,13 +81,13 @@ async def new(ctx, side: str, eloOrMention: str = '1500'):
 
     if utils.is_elo(eloOrMention):
         logger.debug(f'Creating Solo Game!')
-        info = requests.get(f'{config["url"]}new-game/ai?'
+        info = requests.post(f'{config["url"]}new-game/ai?'
             + f'side={side.lstrip().rstrip()}'
             + f'&elo={eloOrMention}'
             + f'&author={utils.user_info(ctx)}')
     else:
         logger.debug(f'Creating 2 Player Game!')
-        info = requests.get(f'{config["url"]}new-game/pvp?' 
+        info = requests.post(f'{config["url"]}new-game/pvp?' 
             + f'side={side.lstrip().rstrip()}' 
             + f'&invitee={utils.mention_parser(eloOrMention)}'
             + f'&author={utils.user_info(ctx)}')
@@ -96,7 +106,7 @@ async def move(ctx, move: str, player: str = ''):
     elif player == '!':
         ai_query_arg = '&ai=true'
 
-    info = requests.get(f'{config["url"]}move?'
+    info = requests.post(f'{config["url"]}move?'
         + f'move={move}'
         + f'&self={utils.user_info(ctx)}'
         + opponent_query_arg
@@ -117,7 +127,7 @@ async def ff(ctx, player: str = ''):
     elif player == '!':
         ai_query_arg = '&ai=true'
 
-    info = requests.get(f'{config["url"]}move?'
+    info = requests.post(f'{config["url"]}ff?'
         + f'self={utils.user_info(ctx)}'
         + opponent_query_arg
         + ai_query_arg)
@@ -143,5 +153,5 @@ async def cheat(ctx, player: str = ''):
     await ctx.send(info.text)
 
 ### Run the Bot Event Loop (infinite loop)
-logger.debug("Running Bot!")
+print("Running Bot!")
 bot.run(config['key'])

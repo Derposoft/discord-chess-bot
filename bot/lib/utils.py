@@ -62,11 +62,7 @@ def is_elo(elo):
 
 # add an extra query param in case of a pvp request
 def pvpstring(player):
-    pstring = ''
-    if player != '':
-        # is a pvp game
-        pstring = f'&opponent={mention_parser(player)}'
-    return pstring
+    return mention_parser(player)
 
 # UNDER CONSTRUCTION (this one is hard as it requires board context)
 def sfmove_to_algebraic(sfmove):

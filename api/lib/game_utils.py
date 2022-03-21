@@ -16,7 +16,7 @@ def move_ai_game(author, game, move_intent, stockfish):
     if not query.add_move_to_game(game, move_intent, game.author_is_white):
         return utils.respond(f'Couldn\'t make that move in the DB Senpai!', 500)
         
-    moves += move_intent
+    moves += ' ' + move_intent
 
     # did player win?
     gameover_text = chessboard.get_gameover_text(logger, stockfish, moves, True)
@@ -54,7 +54,7 @@ def move_pvp_game(mover, game, move_intent, stockfish):
     if not query.add_move_to_game(game, move_intent, utils.is_white_move(game.author_id, game.author_is_white, mover.id)):
         return utils.respond(f'Something Went Wrong in Making that Move (Are u hecking bro?)', 500)
 
-    moves += move_intent
+    moves += ' ' + move_intent
 
     # did player win?
     gameover_text = chessboard.get_gameover_text(logger, stockfish, moves, True)
@@ -87,7 +87,7 @@ class GetGameResponse:
     
     def get_error(self):
         if self._err != None:
-            return self.err
+            return self._err
         elif self._game == None:
             return utils.respond('bruh don\'t know what game you speak of' + utils.mention_db_player(self._mover), 400)
     

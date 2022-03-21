@@ -198,9 +198,9 @@ def cheat():
 # Startup code
 CONFIG_PATH_DEST = "configPath"
 
-def command_line_parse(argv = sys.argv):
+def command_line_parse(argv = sys.argv[1:]):
     description = """Chess Move Restful API"""
-
+    
     argparser = argparse.ArgumentParser(description=description)
     argparser.add_argument("--file", "--config", dest=CONFIG_PATH_DEST, default="./config.json", help = "File Path to Config File")
     argparser.add_argument("--db", "--database", dest="db", help="SQL URI for accessing SQL database")
