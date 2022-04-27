@@ -48,8 +48,6 @@ def update_participant(user_id, guild_id):
         db.rollback()
         return False
         
-
-# BUG Game.id is used for creation not for last updated. Please use last updated.
 def get_recent_game(participant):
     db = db_session()
     return db.query(Game).\
