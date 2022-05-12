@@ -53,17 +53,17 @@ the commands are simple ([parameter] = optional):
 
 2. you can create a new game and play with it, but you can only play 1 game at a time right now
 
-![new game](https://github.com/Derposoft/discord-chess-bot/blob/main/images/2-new_game.png)
+![new game](https://github.com/Derposoft/discord-chess-bot/blob/main/images/2-new_game.png?raw=true)
 
 3. if you can no longer visualize the board, it'll help you cheat - but it's pretty snarky and loves trash talking, so it'll insult you too. sorry
 
-![cheat](https://github.com/Derposoft/discord-chess-bot/blob/main/images/3-cheat.png)
+![cheat](https://github.com/Derposoft/discord-chess-bot/blob/main/images/3-cheat.png?raw=true)
 
 4. if you give up, you can surrender. it really loves trash talking you by design
 
-![help](https://github.com/Derposoft/discord-chess-bot/blob/main/images/4-ff.png)
+![help](https://github.com/Derposoft/discord-chess-bot/blob/main/images/4-ff.png?raw=true)
 
 5. it'll let you know if you try to make an illegal move too
 
-![illegal move](https://github.com/Derposoft/discord-chess-bot/blob/main/images/5-illegal_move.png)
+![illegal move](https://github.com/Derposoft/discord-chess-bot/blob/main/images/5-illegal_move.png?raw=true)
 
