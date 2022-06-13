@@ -5,7 +5,6 @@ from . import chessboard, utils, query
 from .constants import STOCKFISH_INVITEE_ID
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 def move_ai_game(author, game, move_intent, stockfish):
     moves = query.get_moves_string(game)
@@ -13,13 +12,14 @@ def move_ai_game(author, game, move_intent, stockfish):
     if not chessboard.check_move(stockfish, moves, move_intent):
         return utils.respond(f'u can\'t play that lol {utils.mention_db_player(author)}', 400)
 
-    if not query.add_move_to_game(game, move_intent, game.author_is_white):
+    if not query.add_move_to_game(game, move_intent):
         return utils.respond(f'Couldn\'t make that move in the DB Senpai!', 500)
         
-    moves += ' ' + move_intent
+    moves = game.moves
+    logger.debug(f'Calculating from moves for AI Move {moves} for game: {game.id}')
 
     # did player win?
-    gameover_text = chessboard.get_gameover_text(logger, stockfish, moves, True)
+    gameover_text = chessboard.get_gameover_text(stockfish, moves, True)
     logger.debug(f"PLAYER MOVE GAMEOVER?: {gameover_text}")
     if gameover_text is not None:
         logger.debug("PLAYER WIN!")
@@ -28,11 +28,11 @@ def move_ai_game(author, game, move_intent, stockfish):
 
     # AI Player Takes Turn
     best_move = chessboard.engine_move(stockfish, moves, game.stockfish_elo)
-    query.add_move_to_game(game, best_move, not game.author_is_white)
+    query.add_move_to_game(game, best_move)
     moves = query.get_moves_string(game)
 
     # Did AI Player Win?
-    gameover_text = chessboard.get_gameover_text(logger, stockfish, moves, False)
+    gameover_text = chessboard.get_gameover_text(stockfish, moves, False)
     logger.debug(f"CPU MOVE GAMEOVER?: {gameover_text}")
     if gameover_text is not None:
         logger.debug("CPU WIN!")
@@ -42,7 +42,7 @@ def move_ai_game(author, game, move_intent, stockfish):
     return utils.respond(utils.relay_move_db(author, best_move), 202)
 
 def move_pvp_game(mover, game, move_intent, stockfish):
-    if not query.check_users_turn(game, mover):
+    if not check_users_turn(game, mover):
         return utils.respond(f'it not ur turn lol?? {utils.mention_db_player(mover)}', 400)
     
     moves = query.get_moves_string(game)
@@ -51,13 +51,13 @@ def move_pvp_game(mover, game, move_intent, stockfish):
     if not chessboard.check_move(stockfish, moves, move_intent):
         return utils.respond(f'u can\'t play that lol {utils.mention_db_player(mover)}', 400)
 
-    if not query.add_move_to_game(game, move_intent, utils.is_white_move(game.author_id, game.author_is_white, mover.id)):
+    if not query.add_move_to_game(game, move_intent):
         return utils.respond(f'Something Went Wrong in Making that Move (Are u hecking bro?)', 500)
 
-    moves += ' ' + move_intent
+    moves = game.moves
 
     # did player win?
-    gameover_text = chessboard.get_gameover_text(logger, stockfish, moves, True)
+    gameover_text = chessboard.get_gameover_text(stockfish, moves, True)
     logger.debug(f"PLAYER MOVE GAMEOVER?: {gameover_text}")
 
     if gameover_text is not None:
@@ -168,3 +168,10 @@ def pvp_claim_victory(moves, winner, loser, stockfish):
         f'\nmoves: {moves}',
         202
     )
+
+def check_users_turn(game, mover):
+    mover_is_author = game.author_id == mover.id
+    author_is_white = game.author_is_white
+    its_whites_turn = game.white_to_move
+
+    return (author_is_white == its_whites_turn) == mover_is_author

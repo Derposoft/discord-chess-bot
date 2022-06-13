@@ -1,14 +1,14 @@
 from logging import root
 from flask import Flask, request, Blueprint
 from stockfish import Stockfish
-import argparse, json, sys, logging
+import argparse, json, sys, logging, threading
 
 # Local Imports
 from . import chessboard, query, utils, validation, game_utils
-from .constants import BLACK, WHITE, STOCKFISH_INVITEE_ID
+from .constants import WHITE
 
-# BUG (see chessboard.py)
 stockfish_app = None
+stockfish_lock = threading.Lock()
 
 # Other modules may load logger by using
 #  logger = logging.getLogger('some name here')
@@ -87,8 +87,8 @@ def new_stockfish():
     player_is_white = side == WHITE
     query.create_solo_game(participant, elo, player_is_white)
     if not player_is_white:
-        move = chessboard.engine_move(stockfish_app, '', args['elo'])
-        query.add_move_to_game(curr_game, move, True)
+        move = with_stockfish(lambda stockfish: chessboard.engine_move(stockfish, '', args['elo']))
+        query.add_move_to_game(curr_game, move)
 
     return utils.respond(f'New game successfully started for {utils.mention_player(author)}. {utils.relay_move(author, move)}', 201)
 
@@ -144,9 +144,9 @@ def move():
     game = response.get_game()
 
     if is_pvp:
-        return game_utils.move_pvp_game(mover_p, game, move_intent, stockfish_app)
+        return with_stockfish(lambda stockfish: game_utils.move_pvp_game(mover_p, game, move_intent, stockfish))
     else:
-        return game_utils.move_ai_game(mover_p, game, move_intent, stockfish_app)
+        return with_stockfish(lambda stockfish: game_utils.move_ai_game(mover_p, game, move_intent, stockfish))
 
 # accept the player's resignation
 @root.route('/ff',methods = ['POST', 'GET'])
@@ -171,9 +171,9 @@ def ff():
     game_utils.complete_game(game)
 
     if is_pvp:
-        return game_utils.pvp_claim_victory(moves, mover_p, opponent_p, stockfish_app)
+        return with_stockfish(lambda stockfish: game_utils.pvp_claim_victory(moves, mover_p, opponent_p, stockfish))
     else:
-        return game_utils.ai_claim_victory(moves, mover_p, stockfish_app)
+        return with_stockfish(lambda stockfish: game_utils.ai_claim_victory(moves, mover_p, stockfish))
 
 # allow the player to cheat
 @root.route('/cheat',methods = ['POST', 'GET'])
@@ -191,9 +191,33 @@ def cheat():
     moves = query.get_moves_string(game)
 
     # return cheats
-    board, eval, best = chessboard.cheat_board(logger, stockfish_app, moves)
+    board, eval, best = with_stockfish(lambda stockfish: chessboard.cheat_board(stockfish, moves))
 
     return utils.respond(f'{board}\n{eval}\n{best}\nthat good enough for you? stupid cheater {utils.mention_player(mover)}', 200)
+
+def with_stockfish(work):
+    global stockfish_app, stockfish_lock
+    stockfish_lock.acquire()
+    try:
+        return work(stockfish_app)
+    finally:
+        stockfish_lock.release()
+
+# For Testing
+def with_stockfish_nonblock(work):
+    global stockfish_app, stockfish_lock
+    if stockfish_lock.acquire(blocking=False):
+        try:
+            return work(stockfish_app)
+        finally:
+            stockfish_lock.release()
+    else:
+        return work(None)
+
+# For Testing
+def stub_stockfish():
+    global stockfish_app
+    stockfish_app = 1
 
 # Startup code
 CONFIG_PATH_DEST = "configPath"
@@ -224,12 +248,13 @@ def create_app(args={}):
     utils.safe_dict_copy_default(config, ['stockfish-depth'], data, ['api', 'stockfish', 'depth'], 15)
     utils.safe_dict_copy_default(config, ['stockfish-params'], data, ['api', 'stockfish'], {})
     utils.safe_dict_copy_default(config, ['flask'], data, ['api', 'flask'], {})
+    utils.safe_dict_copy_default(config, ['log-query'], data, ['api', 'log-query'], True)
     utils.safe_dict_copy(config, ['db'], data, ['api', 'db_uri'])
 
     # From CLI Args
     utils.safe_dict_copy_default(config, ['db'], args, ['db'], "sqlite:///storage.db")
 
-    query.init(config['db'])
+    query.init(config['db'], config['log-query'])
     global stockfish_app
     stockfish_app = Stockfish(path=config['stockfish-path'], depth=config['stockfish-depth'], parameters=config['stockfish-params'])
 

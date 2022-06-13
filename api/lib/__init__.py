@@ -1,1 +1,1 @@
-__all__ = ['api', 'chessboard', 'constants', 'db', 'game_utils', 'query', 'utils', 'validation']
+__all__ = ['api', 'chessboard', 'constants', 'db', 'game_utils', 'query', 'stockfish', 'utils', 'validation']

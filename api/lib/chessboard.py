@@ -1,8 +1,6 @@
-import chess
+import chess, logging
 
-# BUG Using Internal State on an object without a resource pool (Data Race)
-# This module should make use of a synchronous message broker system (RabbitMQ)
-# to make sure one thread is uing stockfish at a time
+logger = logging.getLogger(__name__)
 
 def _set_board_to(stockfish, moves):
     stockfish.set_position(
@@ -19,8 +17,8 @@ def engine_move(stockfish, moves, elo):
     best = stockfish.get_best_move()
     return best
 
-def cheat_board(log, stockfish, moves):
-    log.debug(f'moves {moves}')
+def cheat_board(stockfish, moves):
+    logger.debug(f'moves {moves}')
     _set_board_to(stockfish, moves)
     board = stockfish.get_board_visual()
     eval = stockfish.get_evaluation()
@@ -34,13 +32,13 @@ def get_board(stockfish, moves):
 def get_board_backquoted(stockfish, moves):
     return f'```{get_board(stockfish, moves)}```'
 
-def get_gameover_text(log, stockfish, moves, player_just_moved):
-    log.debug(f'{moves} {player_just_moved}')
+def get_gameover_text(stockfish, moves, player_just_moved):
+    logger.debug(f'{moves} {player_just_moved}')
     board_visual = get_board_backquoted(stockfish, moves)
     finish_text = board_visual + '\nfull game: ' + moves
     fen = stockfish.get_fen_position()
     board = chess.Board(fen)
-    log.debug(f'{board.outcome}')
+    logger.debug(f'{board.outcome()}')
     # check for different game over scenarios
     if board.is_stalemate():
         return 'game is draw by stalemate. sadge. final board:\n' + finish_text

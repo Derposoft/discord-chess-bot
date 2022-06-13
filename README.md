@@ -44,8 +44,8 @@ These will start background processes. To kill these processes it may only be po
 I added a second requirements list for dev testing. `requirements-dev` which can be installed via `pip install -r requirements-dev.txt`. Then go ahead and run via pytest.
 
 1. `pip install -r requirements-dev.txt`
-2. `python -m pytest --config="test-config.json" ./api` with `test-config.json` being the same as `config.example.json` but with test/breakable values (don't use the production database)
-3. `python -m pytest --config="test-config.json" ./bot` same as above with `test-config.json` (it uses the same file too)
+2. `python -m pytest --log-cli-level=0 --config="test-config.json" ./api` with `test-config.json` being the same as `config.example.json` but with test/breakable values (don't use the production database)
+3. `python -m pytest --log-cli-level=0 --config="test-config.json" ./bot` same as above with `test-config.json` (it uses the same file too)
 
 ## ok but how do i use the bot once it's up and running?
 the commands are simple ([parameter] = optional):

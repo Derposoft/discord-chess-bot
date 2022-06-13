@@ -81,8 +81,5 @@ def relay_move_db(mover, move):
 def _relay_move(mover, move, mention_player_lambda):
     return ('I play ' + move + mention_player_lambda(mover) + '.' if move != None else '')
 
-def is_white_move(author_id, author_is_white, mover_id):
-    return (author_id == mover_id) == author_is_white
-
 def respond(body, status):
     return make_response((body, status))
