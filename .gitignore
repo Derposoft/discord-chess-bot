@@ -1,7 +1,10 @@
 __pycache__/
 *.py[cod]
+*.pytest*
 
 
 keys.json
+config.json
 *.db
 *.out
+*.log

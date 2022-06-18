@@ -1,0 +1,18 @@
+{
+    "keys": {
+        "discord": "SOME_EXAMPLE_KEY" 
+    },
+
+    "api": {
+        "host": "0.0.0.0",
+        "port": 8000,
+        "stockfish": {
+            "path": "path_to_stockfish"
+        }
+    },
+
+    "bot": {
+        "url": "http://localhost:5000",
+        "prefix": "-"
+    }
+}
