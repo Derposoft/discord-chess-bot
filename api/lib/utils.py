@@ -1,11 +1,8 @@
 from flask import make_response
-
-# Takes two dictionaries and 2 lookups. Assigns the value if it exists otherwise assigns it to default
-def safe_dict_copy_default(recv, recvpath, send, sendpath, default):
-    safe_dict_copy(recv, recvpath, send, sendpath, lambda: default)
+from copy import deepcopy
 
 # Takes two dictionaries and 2 lookups. Assigns the value if it exists otherwise calls supplier. Will not assign index to "None"
-def safe_dict_copy(recv, recvpath, send, sendpath, supplier=lambda: None):
+def safe_dict_copy(recv, recvpath, send, sendpath, default=None):
     if recvpath is None or len(recvpath) == 0:
         raise ValueError("Indexes for receiving dictionary are empty or None") 
     elif sendpath is None or len(sendpath) == 0:
@@ -43,22 +40,11 @@ def safe_dict_copy(recv, recvpath, send, sendpath, supplier=lambda: None):
             break
     
     if sendNode is None:
-        sendNode = supplier()
+        sendNode = deepcopy(default)
         if sendNode is None:
             return
 
     recvDict[recvpath[-1]] = sendNode
-
-
-# Takes a dictionary and a list of indexes. Will return the value in the dictionary
-# representing the first-most index in indexes. Otherwise return None if none of the
-# indexes are in the dictionary
-def get_first_valid_index(dict, indexes):
-    for index in indexes:
-        if index in dict:
-            return dict[index]
-    
-    return None
 
 def parse_args(request):
     return request.args

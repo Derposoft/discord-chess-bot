@@ -19,8 +19,8 @@ root = Blueprint('root', __name__)
 @root.route('/signup', methods = ['POST'])
 def create_user():
     args = utils.parse_args(request)
-    user_id = utils.get_first_valid_index(args, ['user'])
-    guild_id = utils.get_first_valid_index(args, ['guild'])
+    user_id = args.get('user')
+    guild_id = args.get('guild')
     if user_id == None and guild_id == None:
         return utils.respond(f'Cannot Sign This User Up without some Discord Identification', 400)
     
@@ -38,8 +38,8 @@ def create_user():
 @root.route('/change-user', methods = ['POST'])
 def update_user():
     args = utils.parse_args(request)
-    user_id = utils.get_first_valid_index(args, ['user'])
-    guild_id = utils.get_first_valid_index(args, ['guild'])
+    user_id = args.get('user')
+    guild_id = args.get('guild')
     
     if query.get_participant(user_id) == None:
         return utils.respond(f'That user doesn\'t exist pleb >:O', 401)
@@ -52,7 +52,7 @@ def update_user():
 @root.route('/get-user', methods = ['GET'])
 def get_user():
     args = utils.parse_args(request)
-    user_id = utils.get_first_valid_index(args, ['user'])
+    user_id = args.get('user')
 
     user = query.get_participant(user_id)
     if user == None:
@@ -64,9 +64,9 @@ def get_user():
 @root.route('/new-game/ai', methods = ['POST'])
 def new_stockfish():
     args = utils.parse_args(request)
-    author = utils.get_first_valid_index(args, ['author'])
-    elo = utils.get_first_valid_index(args, ['elo'])
-    side = utils.get_first_valid_index(args, ['side'])
+    author = args.get('author')
+    elo = args.get('elo')
+    side = args.get('side')
 
     validation_resp = validation.validate_new_game(False, side, author, None)
     if validation_resp is not None:
@@ -96,9 +96,9 @@ def new_stockfish():
 @root.route('/new-game/pvp', methods = ['POST'])    
 def new():
     args = utils.parse_args(request)
-    author = utils.get_first_valid_index(args, ['author'])
-    invitee = utils.get_first_valid_index(args, ['invitee'])
-    side = utils.get_first_valid_index(args, ['side'])
+    author = args.get('author')
+    invitee = args.get('invitee')
+    side = args.get('side')
 
     validation_resp = validation.validate_new_game(True, side, author, invitee)
     if validation_resp is not None:
@@ -126,10 +126,10 @@ def new():
 @root.route('/move',methods = ['POST', 'GET'])
 def move():
     args = utils.parse_args(request)
-    mover = utils.get_first_valid_index(args, ['self'])
-    opponent = utils.get_first_valid_index(args, ['opponent'])
-    is_ai = utils.get_first_valid_index(args, ['ai'])
-    move_intent = utils.get_first_valid_index(args, ['move'])
+    mover = args.get('self')
+    opponent = args.get('opponent')
+    is_ai = args.get('ai')
+    move_intent = args.get('move')
     
     logger.debug(f"THIS IS A COOL MOVE INTENT {move_intent}")
     if move_intent is None:
@@ -152,9 +152,9 @@ def move():
 @root.route('/ff',methods = ['POST', 'GET'])
 def ff():
     args = utils.parse_args(request)
-    mover = utils.get_first_valid_index(args, ['self'])
-    opponent = utils.get_first_valid_index(args, ['opponent'])
-    is_ai = utils.get_first_valid_index(args, ['ai'])
+    mover = args.get('self')
+    opponent = args.get('opponent')
+    is_ai = args.get('ai')
     
     response = game_utils.get_game(mover, opponent, is_ai)
     if not response.is_valid():
@@ -179,9 +179,9 @@ def ff():
 @root.route('/cheat',methods = ['POST', 'GET'])
 def cheat():
     args = utils.parse_args(request)
-    mover = utils.get_first_valid_index(args, ['self'])
-    opponent = utils.get_first_valid_index(args, ['opponent'])
-    is_ai = utils.get_first_valid_index(args, ['ai'])
+    mover = args.get('self')
+    opponent = args.get('opponent')
+    is_ai = args.get('ai')
 
     response = game_utils.get_game(mover, opponent, is_ai)
     if not response.is_valid():
@@ -242,17 +242,17 @@ def create_app(args={}):
             data = json.load(configFile)
 
     # From Config File
-    utils.safe_dict_copy_default(config, ['host'], data, ['api', 'host'], "0.0.0.0")
-    utils.safe_dict_copy_default(config, ['port'], data, ['api', 'port'], 8000)
-    utils.safe_dict_copy_default(config, ['stockfish-path'], data, ['api', 'stockfish', 'path'], '/usr/games/stockfish')
-    utils.safe_dict_copy_default(config, ['stockfish-depth'], data, ['api', 'stockfish', 'depth'], 15)
-    utils.safe_dict_copy_default(config, ['stockfish-params'], data, ['api', 'stockfish'], {})
-    utils.safe_dict_copy_default(config, ['flask'], data, ['api', 'flask'], {})
-    utils.safe_dict_copy_default(config, ['log-query'], data, ['api', 'log-query'], True)
+    utils.safe_dict_copy(config, ['host'], data, ['api', 'host'], "0.0.0.0")
+    utils.safe_dict_copy(config, ['port'], data, ['api', 'port'], 8000)
+    utils.safe_dict_copy(config, ['stockfish-path'], data, ['api', 'stockfish', 'path'], '/usr/games/stockfish')
+    utils.safe_dict_copy(config, ['stockfish-depth'], data, ['api', 'stockfish', 'depth'], 15)
+    utils.safe_dict_copy(config, ['stockfish-params'], data, ['api', 'stockfish'], {})
+    utils.safe_dict_copy(config, ['flask'], data, ['api', 'flask'], {})
+    utils.safe_dict_copy(config, ['log-query'], data, ['api', 'log-query'], True)
     utils.safe_dict_copy(config, ['db'], data, ['api', 'db_uri'])
 
     # From CLI Args
-    utils.safe_dict_copy_default(config, ['db'], args, ['db'], "sqlite:///storage.db")
+    utils.safe_dict_copy(config, ['db'], args, ['db'], "sqlite:///storage.db")
 
     query.init(config['db'], config['log-query'])
     global stockfish_app

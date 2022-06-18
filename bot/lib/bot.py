@@ -23,14 +23,15 @@ config = {
 print(f"Loading config file from {args.configPath}")
 with open(args.configPath, 'r') as configFile:
     data = json.load(configFile)
-    utils.safe_dict_copy(config, ['key'], data, ['keys', 'discord'], lambda: print("No Key Provided to Bot!", file=sys.stderr))
+    utils.safe_dict_copy(config, ['key'], data, ['keys', 'discord'])
     utils.safe_dict_copy(config, ['url'], data, ['bot', 'url'])
     utils.safe_dict_copy(config, ['password'], data, ['bot', 'password'])
-    utils.safe_dict_copy_default(config, ['prefix'], data, ['bot', 'prefix'], '-')
-    utils.safe_dict_copy_default(config, ['botDesc'], data, ['bot', 'description'], 'blindfold chess bot')
+    utils.safe_dict_copy(config, ['prefix'], data, ['bot', 'prefix'], '-')
+    utils.safe_dict_copy(config, ['botDesc'], data, ['bot', 'description'], 'blindfold chess bot')
     utils.safe_dict_copy(config, ['log'], data, ['bot', 'log'])
 
 if 'key' not in config:
+    print("No Key Provided to Bot!", file=sys.stderr)
     exit(1)
 
 ### Initialize Log
