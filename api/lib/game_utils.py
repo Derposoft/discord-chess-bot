@@ -22,12 +22,12 @@ def move_ai_game(author, game, move_intent, stockfish):
     logger.debug(f"Calculating from moves for AI Move {moves} for game: {game.id}")
 
     # did player win?
-    gameover_text = chessboard.get_gameover_text(stockfish, moves, True)
+    gameover_text = chessboard.get_gameover_text(stockfish, moves, False, author)
     logger.debug(f"PLAYER MOVE GAMEOVER?: {gameover_text}")
     if gameover_text is not None:
         logger.debug("PLAYER WIN!")
         complete_game(game)
-        return utils.respond(gameover_text, 202)
+        return gameover_text
 
     # AI Player Takes Turn
     best_move = chessboard.engine_move(stockfish, moves, game.stockfish_elo)
@@ -35,19 +35,19 @@ def move_ai_game(author, game, move_intent, stockfish):
     moves = query.get_moves_string(game)
 
     # Did AI Player Win?
-    gameover_text = chessboard.get_gameover_text(stockfish, moves, False)
+    gameover_text = chessboard.get_gameover_text(
+        stockfish, moves, True, author, last_move=best_move
+    )
     logger.debug(f"CPU MOVE GAMEOVER?: {gameover_text}")
     if gameover_text is not None:
         logger.debug("CPU WIN!")
         complete_game(game)
-        return utils.respond(
-            utils.relay_move_db(author, best_move) + "\n" + gameover_text, 202
-        )
+        return gameover_text
 
     return utils.respond(utils.relay_move_db(author, best_move), 202)
 
 
-def move_pvp_game(mover, game, move_intent, stockfish):
+def move_pvp_game(mover, opponent, game, move_intent, stockfish):
     if not check_users_turn(game, mover):
         return utils.respond(
             f"it not ur turn lol?? {utils.mention_db_player(mover)}", 400
@@ -69,16 +69,17 @@ def move_pvp_game(mover, game, move_intent, stockfish):
     moves = game.moves
 
     # did player win?
-    gameover_text = chessboard.get_gameover_text(stockfish, moves, True)
+    gameover_text = chessboard.get_gameover_text(
+        stockfish, moves, False, mover, opponent=opponent
+    )
     logger.debug(f"PLAYER MOVE GAMEOVER?: {gameover_text}")
 
     if gameover_text is not None:
         # end game
         logger.debug("PLAYER WIN!")
         complete_game(game)
-        return utils.respond(gameover_text, 202)
+        return gameover_text
 
-    # did engine/person win?
     return utils.respond(
         f"ur move has been made good job pogO {utils.mention_db_player(mover)}", 202
     )
@@ -177,34 +178,6 @@ def complete_game(game):
     logger.debug(f"Game Has Been Completed and Thus Archived! ID:{game.id}")
     if not query.archive_game(game):
         logger.error(f"Issue occurred when Archiving Game!")
-
-
-def solo_claim_victory(moves, mover, stockfish):
-    return utils.respond(
-        f"{utils.mention_db_player(mover)} is better than a rock with electricity..."
-        + f"kudos to you with final board state:\n{chessboard.get_board_backquoted(stockfish, moves)}"
-        + f"\nmoves: {moves}",
-        202,
-    )
-
-
-def ai_claim_victory(moves, mover, stockfish):
-    return utils.respond(
-        f"{utils.mention_db_player(mover)} get rekt noob i win again KEKW "
-        + f"final board state:\n{chessboard.get_board_backquoted(stockfish, moves)}"
-        + f"\nmoves: {moves}",
-        202,
-    )
-
-
-def pvp_claim_victory(moves, winner, loser, stockfish):
-    return utils.respond(
-        f"{utils.mention_db_player(loser)} lmao "
-        + f"{utils.mention_db_player(winner)} stands above you again, you plebe:\n"
-        + f"{chessboard.get_board_backquoted(stockfish, moves)}"
-        + f"\nmoves: {moves}",
-        202,
-    )
 
 
 def check_users_turn(game, mover):

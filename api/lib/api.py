@@ -163,13 +163,14 @@ def move():
         return game_utils.get_error_from_response(response)
 
     mover_p = game_utils.get_mover_from_response(response)
+    opponent_p = game_utils.get_opponent_from_response(response)
     is_pvp = game_utils.get_is_pvp_from_response(response)
     game = game_utils.get_game_from_response(response)
 
     if is_pvp:
         return with_stockfish(
             lambda stockfish: game_utils.move_pvp_game(
-                mover_p, game, move_intent, stockfish
+                mover_p, opponent_p, game, move_intent, stockfish
             )
         )
     else:
@@ -204,13 +205,15 @@ def ff():
 
     if is_pvp:
         return with_stockfish(
-            lambda stockfish: game_utils.pvp_claim_victory(
+            lambda stockfish: chessboard.pvp_claim_victory(
                 moves, mover_p, opponent_p, stockfish
             )
         )
     else:
         return with_stockfish(
-            lambda stockfish: game_utils.ai_claim_victory(moves, mover_p, stockfish)
+            lambda stockfish: chessboard.ai_claim_victory(
+                moves, mover_p, None, stockfish
+            )
         )
 
 
