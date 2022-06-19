@@ -84,50 +84,10 @@ def move_pvp_game(mover, game, move_intent, stockfish):
     )
 
 
-class GetGameResponse:
-    def constructError(err):
-        return GetGameResponse(err, None, None, None, None)
-
-    def constructGame(mover_p, opponent_p, is_pvp, game):
-        return GetGameResponse(None, mover_p, opponent_p, is_pvp, game)
-
-    def __init__(self, err, mover_p, opponent_p, is_pvp, game):
-        self._err = err
-        self._mover = mover_p
-        self._opponent = opponent_p
-        self._is_pvp = is_pvp
-        self._game = game
-
-    def get_error(self):
-        if self._err != None:
-            return self._err
-        elif self._game == None:
-            return utils.respond(
-                "bruh don't know what game you speak of"
-                + utils.mention_db_player(self._mover),
-                400,
-            )
-
-    def is_valid(self):
-        return self._err == None and self._game != None
-
-    def get_game(self):
-        return self._game
-
-    def get_mover(self):
-        return self._mover
-
-    def get_opponent(self):
-        return self._opponent
-
-    def get_is_pvp(self):
-        return self._is_pvp
-
-
 def get_game(mover, opponent, is_ai):
     mover_p = query.get_participant(mover)
     if mover_p is None:
-        return GetGameResponse.constructError(
+        return construct_get_game_error(
             utils.respond(
                 f"bruh is this your first time {utils.mention_player(mover)}?", 400
             )
@@ -137,7 +97,7 @@ def get_game(mover, opponent, is_ai):
     if opponent is not None:
         opponent_p = query.get_participant(opponent)
         if opponent_p is None:
-            return GetGameResponse.constructError(
+            return construct_get_game_error(
                 utils.respond(
                     f"Cool you wanna play with {utils.mention_player(opponent)}... but idk who they are.",
                     400,
@@ -161,7 +121,56 @@ def get_game(mover, opponent, is_ai):
     logger.debug(
         f"Returning Game: {game} and Mover: {mover_p} and opponent {opponent_p}"
     )
-    return GetGameResponse.constructGame(mover_p, opponent_p, is_pvp, game)
+    return construct_get_game_response(mover_p, opponent_p, is_pvp, game)
+
+
+def _construct_get_game_response_map(err, mover_p, opponent_p, is_pvp, game):
+    return {
+        "error": err,
+        "mover_p": mover_p,
+        "opponent_p": opponent_p,
+        "is_pvp": is_pvp,
+        "game": game,
+    }
+
+
+def construct_get_game_error(err):
+    return _construct_get_game_response_map(err, None, None, None, None)
+
+
+def construct_get_game_response(mover_p, opponent_p, is_pvp, game):
+    return _construct_get_game_response_map(None, mover_p, opponent_p, is_pvp, game)
+
+
+def get_error_from_response(game_response):
+    if game_response["error"] != None:
+        return game_response["error"]
+    elif game_response["game"] == None:
+        return utils.respond(
+            "bruh don't know what game you speak of"
+            + utils.mention_db_player(game_response["mover_p"]),
+            400,
+        )
+
+
+def is_valid_from_response(game_response):
+    return game_response["error"] == None and game_response["game"] != None
+
+
+def get_game_from_response(game_response):
+    return game_response["game"]
+
+
+def get_mover_from_response(game_response):
+    return game_response["mover_p"]
+
+
+def get_opponent_from_response(game_response):
+    return game_response["opponent_p"]
+
+
+def get_is_pvp_from_response(game_response):
+    return game_response["is_pvp"]
 
 
 def complete_game(game):

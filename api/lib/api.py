@@ -159,12 +159,12 @@ def move():
         )
 
     response = game_utils.get_game(mover, opponent, is_ai)
-    if not response.is_valid():
-        return response.get_error()
+    if not game_utils.is_valid_from_response(response):
+        return game_utils.get_error_from_response(response)
 
-    mover_p = response.get_mover()
-    is_pvp = response.get_is_pvp()
-    game = response.get_game()
+    mover_p = game_utils.get_mover_from_response(response)
+    is_pvp = game_utils.get_is_pvp_from_response(response)
+    game = game_utils.get_game_from_response(response)
 
     if is_pvp:
         return with_stockfish(
@@ -189,13 +189,13 @@ def ff():
     is_ai = args.get("ai")
 
     response = game_utils.get_game(mover, opponent, is_ai)
-    if not response.is_valid():
-        return response.get_error()
+    if not game_utils.is_valid_from_response(response):
+        return game_utils.get_error_from_response(response)
 
-    mover_p = response.get_mover()
-    opponent_p = response.get_opponent()
-    is_pvp = response.get_is_pvp()
-    game = response.get_game()
+    mover_p = game_utils.get_mover_from_response(response)
+    opponent_p = game_utils.get_opponent_from_response(response)
+    is_pvp = game_utils.get_is_pvp_from_response(response)
+    game = game_utils.get_game_from_response(response)
 
     moves = query.get_moves_string(game)
 
@@ -223,10 +223,10 @@ def cheat():
     is_ai = args.get("ai")
 
     response = game_utils.get_game(mover, opponent, is_ai)
-    if not response.is_valid():
-        return response.get_error()
+    if not game_utils.is_valid_from_response(response):
+        return game_utils.get_error_from_response(response)
 
-    game = response.get_game()
+    game = game_utils.get_game_from_response(response)
     moves = query.get_moves_string(game)
 
     # return cheats
