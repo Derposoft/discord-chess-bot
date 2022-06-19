@@ -11,6 +11,18 @@ def init(dbURL, echo):
     init_db(dbURL, echo)
 
 
+def get_create_participant(discordID):
+    db = db_session()
+    try:
+        participant = _get_participant_with_session(db, discordID)
+        if participant == None:
+            participant = create_participant(discordID, None)
+
+        return participant
+    finally:
+        db.close()
+
+
 def get_participant(discordID):
     # discordID could either be the discord user ID or
     # the GuildMemberID
@@ -46,13 +58,21 @@ def get_participant_from_id(db_id):
 def create_participant(user_id, guild_id):
     db = db_session()
     try:
+        return _create_participant_with_session(db, user_id, guild_id)
+    finally:
+        db.close()
+
+
+def _create_participant_with_session(db, user_id, guild_id):
+    try:
         p = Participant(discord_user_id=user_id, discord_guild_id=guild_id)
         db.add(p)
         db.commit()
-        return True
+        db.refresh(p)
+        return p
     except:
         db.rollback()
-        return False
+        return None
 
 
 def update_participant(user_id, guild_id):

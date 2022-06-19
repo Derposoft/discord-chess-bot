@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import json, requests, sys, argparse, logging
-from . import dummylog, utils
+from . import utils
 
 ### Get Command Line Arguments and configuration
 description = """Discord Chess Bot is a simple application to play againt other server
@@ -57,16 +57,23 @@ if "key" not in config:
     exit(1)
 
 ### Initialize Log
-if not config["quiet"]:
-    logger = logging.getLogger("discord")
-    logger.setLevel(logging.DEBUG)
+logger = logging.getLogger("discord")
+logger.setLevel(logging.DEBUG)
+
+# According to Pydocs we shouldn't be Instantiating handlers...
+# but regardless this option is available to users. 
+# If it becomes less useful we can remove it later
+if config["quiet"]:
+    handler = logging.NullHandler()
+    logger.addHandler(handler)
+else:
     handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="w")
     handler.setFormatter(
         logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
     )
     logger.addHandler(handler)
-else:
-    logger = dummylog()
+    
+
 
 ### Initialize bot
 intents = discord.Intents.default()

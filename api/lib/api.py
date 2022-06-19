@@ -4,7 +4,7 @@ from stockfish import Stockfish
 import argparse, json, sys, logging, threading
 
 # Local Imports
-from . import chessboard, query, utils, validation, game_utils
+from . import chessboard, query, utils, game_utils
 from .constants import WHITE
 
 stockfish_app = None
@@ -33,7 +33,7 @@ def create_user():
     if query.get_participant(guild_id) != None:
         return utils.respond(f"That user already exists Master -.o", 401)
 
-    if query.create_participant(user_id, guild_id):
+    if query.create_participant(user_id, guild_id) != None:
         return utils.respond(f"Created User M8!", 201)
 
     return utils.respond(f"UWU I couldn't make that for you senpai >.<", 500)
@@ -74,14 +74,14 @@ def new_stockfish():
     elo = args.get("elo")
     side = args.get("side")
 
-    validation_resp = validation.validate_new_game(False, side, author, None)
+    validation_resp = game_utils.validate_new_game(False, side, author, None)
     if validation_resp is not None:
         return validation_resp
     elif elo is None:
         return utils.respond(f"No Elo Setting Provided for AI Game!", 400)
 
     # check to make sure player doesn't already have a game
-    participant = query.get_participant(author)
+    participant = query.get_create_participant(author)
     if participant is None:
         return utils.respond(f"Participant Does Not Exist!", 422)
 
@@ -114,16 +114,16 @@ def new():
     invitee = args.get("invitee")
     side = args.get("side")
 
-    validation_resp = validation.validate_new_game(True, side, author, invitee)
+    validation_resp = game_utils.validate_new_game(True, side, author, invitee)
     if validation_resp is not None:
         return utils.respond(validation_resp, 400)
 
     # check to make sure player doesn't already have a game
-    author_p = query.get_participant(author)
+    author_p = query.get_create_participant(author)
     if author_p is None:
         return utils.respond(f"Author Participant Does Not Exist!", 430)
 
-    invitee_p = query.get_participant(invitee)
+    invitee_p = query.get_create_participant(invitee)
     if invitee_p is None:
         return utils.respond(f"Author Participant Does Not Exist!", 430)
 
@@ -159,17 +159,18 @@ def move():
         )
 
     response = game_utils.get_game(mover, opponent, is_ai)
-    if not response.is_valid():
-        return response.get_error()
+    if not game_utils.is_valid_from_response(response):
+        return game_utils.get_error_from_response(response)
 
-    mover_p = response.get_mover()
-    is_pvp = response.get_is_pvp()
-    game = response.get_game()
+    mover_p = game_utils.get_mover_from_response(response)
+    opponent_p = game_utils.get_opponent_from_response(response)
+    is_pvp = game_utils.get_is_pvp_from_response(response)
+    game = game_utils.get_game_from_response(response)
 
     if is_pvp:
         return with_stockfish(
             lambda stockfish: game_utils.move_pvp_game(
-                mover_p, game, move_intent, stockfish
+                mover_p, opponent_p, game, move_intent, stockfish
             )
         )
     else:
@@ -189,13 +190,13 @@ def ff():
     is_ai = args.get("ai")
 
     response = game_utils.get_game(mover, opponent, is_ai)
-    if not response.is_valid():
-        return response.get_error()
+    if not game_utils.is_valid_from_response(response):
+        return game_utils.get_error_from_response(response)
 
-    mover_p = response.get_mover()
-    opponent_p = response.get_opponent()
-    is_pvp = response.get_is_pvp()
-    game = response.get_game()
+    mover_p = game_utils.get_mover_from_response(response)
+    opponent_p = game_utils.get_opponent_from_response(response)
+    is_pvp = game_utils.get_is_pvp_from_response(response)
+    game = game_utils.get_game_from_response(response)
 
     moves = query.get_moves_string(game)
 
@@ -204,13 +205,15 @@ def ff():
 
     if is_pvp:
         return with_stockfish(
-            lambda stockfish: game_utils.pvp_claim_victory(
+            lambda stockfish: chessboard.pvp_claim_victory(
                 moves, mover_p, opponent_p, stockfish
             )
         )
     else:
         return with_stockfish(
-            lambda stockfish: game_utils.ai_claim_victory(moves, mover_p, stockfish)
+            lambda stockfish: chessboard.ai_claim_victory(
+                moves, mover_p, None, stockfish
+            )
         )
 
 
@@ -223,10 +226,10 @@ def cheat():
     is_ai = args.get("ai")
 
     response = game_utils.get_game(mover, opponent, is_ai)
-    if not response.is_valid():
-        return response.get_error()
+    if not game_utils.is_valid_from_response(response):
+        return game_utils.get_error_from_response(response)
 
-    game = response.get_game()
+    game = game_utils.get_game_from_response(response)
     moves = query.get_moves_string(game)
 
     # return cheats
