@@ -82,6 +82,7 @@ def pvp_claim_victory(moves, winner, loser, stockfish):
 
 def get_gameover_text(stockfish, moves, is_ai, mover, opponent=None, last_move=None):
     logger.debug(f"Getting Game Over Text For: {moves} {is_ai}")
+    _set_board_to(stockfish, moves)
     fen = stockfish.get_fen_position()
     board = chess.Board(fen)
     logger.debug(f"{board.outcome()}")

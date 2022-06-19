@@ -33,7 +33,7 @@ def create_user():
     if query.get_participant(guild_id) != None:
         return utils.respond(f"That user already exists Master -.o", 401)
 
-    if query.create_participant(user_id, guild_id):
+    if query.create_participant(user_id, guild_id) != None:
         return utils.respond(f"Created User M8!", 201)
 
     return utils.respond(f"UWU I couldn't make that for you senpai >.<", 500)
@@ -81,7 +81,7 @@ def new_stockfish():
         return utils.respond(f"No Elo Setting Provided for AI Game!", 400)
 
     # check to make sure player doesn't already have a game
-    participant = query.get_participant(author)
+    participant = query.get_create_participant(author)
     if participant is None:
         return utils.respond(f"Participant Does Not Exist!", 422)
 
@@ -119,11 +119,11 @@ def new():
         return utils.respond(validation_resp, 400)
 
     # check to make sure player doesn't already have a game
-    author_p = query.get_participant(author)
+    author_p = query.get_create_participant(author)
     if author_p is None:
         return utils.respond(f"Author Participant Does Not Exist!", 430)
 
-    invitee_p = query.get_participant(invitee)
+    invitee_p = query.get_create_participant(invitee)
     if invitee_p is None:
         return utils.respond(f"Author Participant Does Not Exist!", 430)
 

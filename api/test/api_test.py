@@ -180,3 +180,45 @@ def test_cheat(client):
     response = client.get(f"/cheat?self={player1_discordID}")
     logger.info(f"Response: {response.get_data(as_text=True)}")
     assert response.status_code == http.HTTPStatus.OK.value
+
+
+def test_pvp_game_no_signup(client):
+    player1_discordID = 240
+    player2_discordID = 241
+    response = client.post(
+        f"/new-game/pvp?author={player1_discordID}&invitee={player2_discordID}&side=white"
+    )
+    logger.info(f"Response: {response.get_data(as_text=True)}")
+    assert response.status_code == http.HTTPStatus.CREATED.value
+
+    response = client.post(f"/move?self={player1_discordID}&move=e2e4")
+    logger.info(f"Response: {response.get_data(as_text=True)}")
+    assert response.status_code == http.HTTPStatus.ACCEPTED.value
+
+    response = client.post(f"/move?self={player2_discordID}&move=e7e5")
+    logger.info(f"Response: {response.get_data(as_text=True)}")
+    assert response.status_code == http.HTTPStatus.ACCEPTED.value
+
+    response = client.post(f"/move?self={player1_discordID}&move=f1c4")
+    logger.info(f"Response: {response.get_data(as_text=True)}")
+    assert response.status_code == http.HTTPStatus.ACCEPTED.value
+
+    response = client.post(f"/move?self={player2_discordID}&move=d7d6")
+    logger.info(f"Response: {response.get_data(as_text=True)}")
+    assert response.status_code == http.HTTPStatus.ACCEPTED.value
+
+    response = client.post(f"/move?self={player1_discordID}&move=d1f3")
+    logger.info(f"Response: {response.get_data(as_text=True)}")
+    assert response.status_code == http.HTTPStatus.ACCEPTED.value
+
+    response = client.post(f"/move?self={player2_discordID}&move=b8c6")
+    logger.info(f"Response: {response.get_data(as_text=True)}")
+    assert response.status_code == http.HTTPStatus.ACCEPTED.value
+
+    response = client.post(f"/move?self={player1_discordID}&move=f3f7")
+    logger.info(f"Response: {response.get_data(as_text=True)}")
+    assert response.status_code == http.HTTPStatus.ACCEPTED.value
+
+    response = client.post(f"/move?self={player2_discordID}&move=a7a6")
+    logger.info(f"Response: {response.get_data(as_text=True)}")
+    assert response.status_code == http.HTTPStatus.BAD_REQUEST.value
