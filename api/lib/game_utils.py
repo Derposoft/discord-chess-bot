@@ -2,7 +2,7 @@ import logging
 
 # local imports
 from . import chessboard, utils, query
-from .constants import STOCKFISH_INVITEE_ID
+from .constants import STOCKFISH_INVITEE_ID, BLACK, WHITE
 
 logger = logging.getLogger(__name__)
 
@@ -204,3 +204,14 @@ def check_users_turn(game, mover):
     its_whites_turn = game.white_to_move
 
     return (author_is_white == its_whites_turn) == mover_is_author
+
+
+def validate_new_game(is_pvp, side, author, invitee):
+    if side != WHITE and side != BLACK:
+        return f"you can only be {WHITE} or {BLACK} because this is chess OMEGALUL"
+    elif author is None:
+        return "A unique ID for the author must be provided!"
+    elif is_pvp and invitee is None:
+        return "A unique ID for the invitee/challenged must be provided!"
+
+    return None

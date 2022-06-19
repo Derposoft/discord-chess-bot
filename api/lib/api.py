@@ -4,7 +4,7 @@ from stockfish import Stockfish
 import argparse, json, sys, logging, threading
 
 # Local Imports
-from . import chessboard, query, utils, validation, game_utils
+from . import chessboard, query, utils, game_utils
 from .constants import WHITE
 
 stockfish_app = None
@@ -74,7 +74,7 @@ def new_stockfish():
     elo = args.get("elo")
     side = args.get("side")
 
-    validation_resp = validation.validate_new_game(False, side, author, None)
+    validation_resp = game_utils.validate_new_game(False, side, author, None)
     if validation_resp is not None:
         return validation_resp
     elif elo is None:
@@ -114,7 +114,7 @@ def new():
     invitee = args.get("invitee")
     side = args.get("side")
 
-    validation_resp = validation.validate_new_game(True, side, author, invitee)
+    validation_resp = game_utils.validate_new_game(True, side, author, invitee)
     if validation_resp is not None:
         return utils.respond(validation_resp, 400)
 
